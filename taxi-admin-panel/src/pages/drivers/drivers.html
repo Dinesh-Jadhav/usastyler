@@ -1,0 +1,294 @@
+<link rel="import" href="../../../bower_components/salte-rating/salte-rating.html">
+<dom-module id="page-drivers">
+    <template>
+        <style>
+            :host {
+                display: block;
+            }
+
+            #dataTableCard {
+                padding: 10px;
+            }
+
+            .review-card {
+                margin: 10px;
+            }
+
+            .review-text {
+                line-height: 50px;
+            }
+            paper-item {
+                --paper-item: {
+                    cursor: pointer;
+                };
+            }
+/*paper-toolbar {
+box-shadow: inset 0px 5px 6px -3px rgba(0, 0, 0, 0.4);
+}*/
+</style>
+<paper-toolbar>
+    <span class="title">{{localize('drivers')}}</span>
+    <paper-icon-button id="btnAddItem" icon="add" on-click="onAddItem">+</paper-icon-button>
+    <paper-tooltip for="btnAddItem">{{localize('add-item')}}</paper-tooltip>
+</paper-toolbar>
+<paper-dialog id="dlgReviews" style="min-width:500px;min-height:300px;" entry-animation="scale-up-animation"
+exit-animation="fade-out-animation">
+<paper-dialog-scrollable>
+    <div class="vertical layout">
+        <template is="dom-repeat" items="{{reviews}}">
+            <paper-card class="review-card" heading="[[item.last_name]]">
+                <div class="card-content">
+                    <salte-rating class="review-rating" value="[[item.score]]" icon="star"
+                    disabled></salte-rating>
+                    <span class="review-text">[[item.review]]</span>
+                </div>
+            <!--<div class="card-actions">
+                <paper-button>Delete Comment</paper-button>
+                <paper-button>Don't show</paper-button>
+            </div>-->
+        </paper-card>
+    </template>
+</div>
+</paper-dialog-scrollable>
+<div class="buttons">
+    <paper-button dialog-dismiss>{{localize('dismiss')}}</paper-button>
+    <paper-button dialog-confirm autofocus>{{localize('confirm')}}</paper-button>
+</div>
+</paper-dialog>
+<paper-dialog id="dlgTravelTypes" style="min-width:400px;" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
+    <h2>{{localize('driver-travel-types')}}</h2>
+
+    <paper-dialog-scrollable>
+
+        <div class="vertical layout">
+            <paper-listbox selected-values="{{enabledTravelTypes}}" attr-for-selected="data-route" multi>
+                <template is="dom-repeat" items="{{travelTypes}}">
+                    <paper-item data-route$="[[item.id]]">[[item.title]]</paper-item>
+                </template>
+            </paper-listbox>
+        </div>
+    </paper-dialog-scrollable>
+    <div class="buttons">
+        <paper-button dialog-dismiss>{{localize('dismiss')}}</paper-button>
+        <paper-button dialog-confirm autofocus on-click="onSaveTravelTypes">{{localize('confirm')}}
+        </paper-button>
+    </div>
+</paper-dialog>
+<paper-dialog id="dlgEditItem" style="max-width:500px;min-height:300px;" entry-animation="scale-up-animation" exit-animation="fade-out-animation">
+    <template is="dom-repeat" items="{{selectedItems}}">
+        <h2>{{localize('edit-dialog-item-number')}}<span>{{item.id}}</span></h2>
+        <div>
+            <div class="horizontal layout">
+                <paper-input value="{{item.first_name}}" label="{{localize('column-first-name')}}"
+                class="flex"></paper-input>
+                <paper-input value="{{item.last_name}}" label="{{localize('column-last-name')}}"
+                class="flex"></paper-input>
+            </div>
+            <div class="horizontal layout">
+                <paper-input value="{{item.mobile_number}}" label="{{localize('column-mobile-number')}}"
+                class="flex"></paper-input>
+                <paper-input value="{{item.certificate_number}}"
+                label="{{localize('column-certificate-number')}}"
+                class="flex"></paper-input>
+            </div>
+            <div class="horizontal layout">
+                <paper-dropdown-menu label="{{localize('column-car-name')}}" class="flex">
+                    <paper-listbox class="dropdown-content" selected="{{item.fk_car_id}}"
+                    attr-for-selected="data-route">
+                    <template is="dom-repeat" items="[[carNames]]" as="carName">
+                        <paper-item data-route$="[[carName.id]]">[[carName.title]]</paper-item>
+                    </template>
+                </paper-listbox>
+                <
+            </paper-dropdown-menu>
+            <paper-input value="{{item.car_color}}" label="{{localize('column-car-color')}}"
+            class="flex"></paper-input>
+            <paper-input value="{{item.car_production_year}}" label="{{localize('column-car-prod-year')}}"
+            class="flex"></paper-input>
+        </div>
+        <div class="horizontal layout">
+            <paper-input value="{{item.car_plate}}" label="{{localize('column-car-plate')}}"
+            class="flex"></paper-input>
+            <paper-input value="{{item.account_number}}" label="{{localize('column-account-number')}}"
+            class="flex"></paper-input>
+        </div>
+        <div class="horizontal layout">
+            <paper-input value="{{item.address}}" label="{{localize('column-address')}}"
+            class="flex"></paper-input>
+        </div>
+    </div>
+    <div class="buttons">
+        <paper-button dialog-dismiss>{{localize('dismiss')}}</paper-button>
+        <paper-button dialog-confirm autofocus on-click="refreshList">{{localize('confirm')}}</paper-button>
+    </div>
+</template>
+</paper-dialog>
+<paper-datatable-card id="dataTableCard" header="{{localize('drivers')}}" data-source="{{data}}" page-size="10"
+id-property="id"
+selected-ids="{{selectedIds}}">
+<div slot="toolbar-main">
+    <paper-input value="{{searchTerm}}" on-input="refreshList" label="{{localize('table-search')}}"
+    style="display:inline-block" no-label-float>
+    <div prefix>
+        <iron-icon icon="search"></iron-icon>
+    </div>
+</paper-input>
+<paper-icon-button icon="cached" on-tap="refreshList"></paper-icon-button>
+</div>
+<div slot="toolbar-select">
+    <template is="dom-if" if$="[[canDelete('dr')]]">
+        <paper-icon-button id="btnDeleteItems" icon="delete" on-tap="onDeleteItems"></paper-icon-button>
+        <paper-tooltip for="btnDeleteItems">{{localize('delete-items')}}</paper-tooltip>
+    </template>
+</div>
+<div slot="toolbar-select-single">
+    <paper-icon-button id="btnShowReviews" icon="communication:comment"
+    on-tap="onShowReviews"></paper-icon-button>
+    <paper-tooltip for="btnShowReviews">{{localize('show-reviews')}}</paper-tooltip>
+    <paper-icon-button id="btnTravelTypes" icon="icons:list"
+    on-tap="onEditItemTravelTypes"></paper-icon-button>
+    <paper-tooltip for="btnTravelTypes">{{localize('edit-travel-types')}}</paper-tooltip>
+    <template is="dom-if" if$="[[canEdit('dr')]]">
+        <paper-icon-button id="btnEdit" icon="image:edit" on-tap="onEditItem"></paper-icon-button>
+        <paper-tooltip for="btnEdit">{{localize('edit-item')}}</paper-tooltip>
+    </template>
+</div>
+<paper-datatable id="datatable" selectable multi-selection
+selected-items="{{selectedItems}}" on-row-tap="rowTapped">
+<div no-results>
+    {{localize('table-loading')}}
+</div>
+<paper-datatable-column header="{{localize('column-id')}}" property="id" sortable
+align="center" style="width: 3%" sorted></paper-datatable-column>
+<paper-datatable-column header="{{localize('column-first-name')}}" property="first_name"
+style="width: 10%">
+</paper-datatable-column>
+<paper-datatable-column header="{{localize('column-last-name')}}" property="last_name"
+style="width: 10%">
+</paper-datatable-column>
+<paper-datatable-column header="{{localize('column-certificate-number')}}" property="certificate_number"
+style="width: 10%">
+</paper-datatable-column>
+<paper-datatable-column header="{{localize('column-mobile-number')}}" property="mobile_number"
+style="width: 10%">
+</paper-datatable-column>
+<paper-datatable-column header="{{localize('column-rating')}}" property="rating" sortable
+style="width: 12%">
+<template>
+    <salte-rating value="[[value]]" icon="star" disabled></salte-rating>
+</template>
+</paper-datatable-column>
+<paper-datatable-column header="{{localize('column-car-plate')}}" property="car_plate"
+style="width: 7%">
+</paper-datatable-column>
+<paper-datatable-column header="{{localize('column-car-name')}}" property="car_title"
+style="width: 10%">
+</paper-datatable-column>
+<paper-datatable-column header="{{localize('column-account-number')}}" property="account_number"
+style="width: 10%">
+</paper-datatable-column>
+<paper-datatable-column header="{{localize('column-address')}}" property="address"
+style="width: 15%">
+</paper-datatable-column>
+</paper-datatable>
+</paper-datatable-card>
+</template>
+<script>
+    let driversPage;
+    Polymer({
+        is: 'page-drivers',
+        behaviors: [
+        MyLocalizeBehavior
+        ],
+        attached: function () {
+            driversPage = this;
+        },
+        properties: {
+            data: {
+                type: Object,
+                value: {
+                    get: function (sort, page, pageSize) {
+                        let result = getAllDrivers(driversPage.searchTerm, sort, (page - 1) * pageSize, pageSize);
+                        result.then(function (items) {
+                            driversPage.set('data.length', items.length ? items[0].count : 0);
+                        });
+                        return result;
+                    },
+                    set: function (item, property, value) {
+                        return setColumnValue('driver', item.id, property, value);
+                    },
+                    length: 0
+                }
+            },
+            carNames: {
+                type: Array,
+                value: async function () {
+                    socket.emit('getAllCars', function (result) {
+                        driversPage.carNames = result;
+                    });
+                }
+            },
+            formatLatLng: {
+                type: Function,
+                value: function () {
+                    return function (value) {
+                        let lat = value.lat.toFixed(6);
+                        let lng = value.lng.toFixed(6);
+                        return lat + ' | ' + lng;
+                    };
+                }
+            }
+        },
+        onDeleteItems: function () {
+            socket.emit('deleteDrivers', driversPage.selectedIds, function () {
+                driversPage.$.dataTableCard.retrieveVisibleData();
+                driversPage.$.dataTableCard.deselectAll();
+            });
+        },
+        onAddItem: function () {
+            socket.emit('addDriver', function (driverId) {
+                driversPage.selectedIds = [driverId];
+                driversPage.$.dataTableCard.retrieveVisibleData();
+                driversPage.$.dlgEditItem.open();
+            });
+        },
+        onEditItem: function () {
+            this.$.dlgEditItem.open();
+        },
+        onEditItemTravelTypes: function () {
+            socket.emit('getAllTravelTypes', function (result) {
+                driversPage.travelTypes = result;
+                socket.emit('getDriverTravelTypes',driversPage.selectedIds[0],function (enabled) {
+                    driversPage.enabledTravelTypes = enabled;
+                    driversPage.$.dlgTravelTypes.open();
+                });
+            });
+        },
+        onSaveTravelTypes:function () {
+            let enabledOnes = driversPage.enabledTravelTypes.map(x=>parseInt(x));
+            socket.emit('setDriverTravelTypes',driversPage.selectedIds[0],enabledOnes);
+        },
+        onShowReviews: function () {
+            socket.emit('getReviews', driversPage.selectedIds[0], function (result) {
+                driversPage.reviews = result;
+                driversPage.$.dlgReviews.open();
+            });
+        },
+        rowTapped: function (ev) {
+            if (this.isDebouncerActive('dblclick' + ev.detail.item.id)) {
+                ev.preventDefault();
+                this.$.dataTableCard.deselectAll();
+                this.$.dataTableCard.select(ev.detail.item.id);
+                this.onEditItem();
+                this.cancelDebouncer('dblclick');
+            } else {
+                this.debounce('dblclick' + ev.detail.item.id, function () {
+                }, 300);
+            }
+        },
+        refreshList: function (ev) {
+            this.$.dataTableCard.retrieveVisibleData();
+        }
+    });
+</script>
+</dom-module>

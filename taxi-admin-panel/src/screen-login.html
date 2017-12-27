@@ -1,0 +1,62 @@
+<dom-module id="screen-login">
+	<template>
+		<style>
+			:host {
+				height: 100vh;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			}
+			.container{
+
+			}
+			.toolbar{
+				background-color: var(--paper-blue-300);
+			}
+			.button-login{
+				width: 100%;
+				margin: 25px 0 0;
+				--paper-button-ink-color:#7e57c2;
+			}
+			paper-card {
+				--paper-card-header-color: white;
+			}
+		</style>
+		<iron-localstorage name="user" value="{{userStorage}}"></iron-localstorage>
+		<iron-ajax id="ajaxLogin" method="POST" handleAs="json" last-response="{{loginResponse}}" on-response="onLoginResponse"></iron-ajax>
+		<paper-card heading="{{localize('login')}}" image="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAV4AAACWCAYAAACW5+B3AAABlklEQVR42u3UMQEAMAgAoJlybQxnMU3g6wUhiPzVD4AzIV4A8QKIFwDxAogXAPECiBcA8QKIF0C8AIgXQLwAiBdAvACIF0C8AOIFQLwA4gVAvADiBUC8AOIFEC8A4gUQLwDiBRAvAOIFEC+AeAEQL4B4ARAvgHgBEC+AeAHEC4B4AcQLgHgBxAuAeAHECyBeAMQLIF4AxAsgXgDECyBeAPECIF4A8QIgXgDxAiBeAPECiBcA8QKIFwDxAogXAPECiBdAvACIF0C8AIgXQLwAiBdAvADiBUC8AOIFQLwA4gVAvADiBRCveAHECyBeAMQLIF4AxAsgXgDxihdAvADiBUC8AOIFQLwA4gVAvADiBRAvAOIFEC8A4gUQLwDiBRAvgHgBEC+AeAEQL4B4ARAvgHgBxAuAeAHEC4B4AcQLgHgBxAsgXgDECyBeAMQLIF4AxAsgXgDxAiBeAPECIF4A8QIgXgDxAogXAPECiBcA8QKIFwDxAogXQLwAiBdAvACIF0C8AIgXQLwA4gVAvADiBUC8AOIFYDeAMYSKYf1vnwAAAABJRU5ErkJggg==">
+			<div class="card-content">
+				<paper-input id="txtEmail" label="{{localize('email')}}"></paper-input>
+				<paper-input id="txtPassword" label="{{localize('password')}}" type="password"></paper-input>
+			</div>
+				<paper-button class="button-login" on-click="onLoginClicked">{{localize('login')}}</paper-button>
+		</paper-card>
+	</template>
+	<script>
+		Polymer({
+			is: 'screen-login',
+			behaviors:[
+			MyLocalizeBehavior
+			],
+			properties:{
+				userStorage:{
+					type:Object
+				}
+			},
+			onLoginClicked: function () {
+				this.$.ajaxLogin.url = document.createElement('iron-meta').byKey('server') + 'operator_login';
+				this.$.ajaxLogin.params = {'email': this.$.txtEmail.value, 'password': this.$.txtPassword.value};
+				this.$.ajaxLogin.generateRequest();
+			},
+			onTokenReceived: function (result) {
+				if (result && result.token) {
+					this.userStorage = result;
+				}
+			},
+			onLoginResponse:function(event){
+				this.set('userStorage',event.detail.response);
+				this.fire('logged-in',event.detail.response.token);
+			}
+		});
+	</script>
+</dom-module>

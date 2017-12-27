@@ -1,0 +1,144 @@
+<!doctype html>
+<link rel="import" href="../polymer/polymer.html">
+
+<script>
+var Polymer = Polymer || {};
+
+/**
+ * Access to local storage (allows users to prune older entries)
+ *
+ * @polymerBehavior Polymer.IronLocalStorageBehavior
+ * @demo demo/index.html
+ */
+Polymer.IronLocalStorageBehavior =  {
+	getFromCache: function(key) {
+		if (!window.localStorage) {
+			// Ignore caching if local storage is not available
+			return Promise.resolve();
+		}
+		if (!key) {
+			return Promise.resolve();
+		}
+
+		try {
+			var cacheEntryStr = window.localStorage.getItem(key);
+			try {
+				var cacheEntry = JSON.parse(cacheEntryStr);
+				var value = cacheEntry ? cacheEntry.data : null;
+				return Promise.resolve(value);
+			} catch (e) {
+				console.log(`Failed to parse storage value for "${key}": "${valueStr}"`);
+				return Promise.resolve();
+			}
+		} catch (e) {
+			return Promise.reject(e);
+		}
+	},
+
+	saveToCache: function(key, data) {
+		if (!window.localStorage) {
+			// Ignore caching if local storage is not available
+			return Promise.resolve();
+		}
+		if (!key || data === null || data === undefined) {
+			// Don't save empty data
+			return Promise.resolve();
+		}
+
+		var cacheEntry = {
+			data: data,
+			timestamp: Date.now()
+		};
+
+		try {
+			window.localStorage.setItem(key, JSON.stringify(cacheEntry));
+		} catch (e) {
+			return Promise.reject(e);
+		}
+
+		return Promise.resolve();
+	},
+
+	/**
+	 * Removes all old entries in local cache to avoid it overflowing
+	 */
+	pruneCache: function(preservedKeys = [], maxEntriesInLocalStorage = 50) {
+		if (!window.localStorage) {
+			// Ignore caching if local storage is not available
+			return Promise.resolve();
+		}
+
+		if (window.localStorage.length <= maxEntriesInLocalStorage) {
+			// Preformance optimization: leave if there is nothing to be done
+			return Promise.resolve();
+		}
+
+		// Collect all local storage entries with their timestamp (to detect
+		// afterwards the oldest ones)
+		var entries = [];
+		for (var i = 0; i < window.localStorage.length; i++){
+			var key = window.localStorage.key(i);
+
+			// Preserve whitelisted keys
+			if (preservedKeys.indexOf(key) >= 0) {
+				continue;
+			}
+
+			var valueStr = window.localStorage.getItem(key);
+			try {
+				var value = JSON.parse(valueStr);
+				var timestamp = value.timestamp;
+
+				// Remove all (legacy) entries without a timestamp
+				// XXX: Use parameter `preservedKeys` to protect entries from
+				// being cleaned up.
+				if (!timestamp) {
+					window.localStorage.removeItem(key);
+				} else {
+					entries.push({ key: key, timestamp: timestamp });
+				}
+			} catch (e) {
+				window.localStorage.removeItem(key);
+
+				console.log(`Remove invalid local storage entry "${valueStr}"`);
+			}
+		}
+
+		// Check if there is anything to be done. This can't be checked earlier
+		// because (legacy) entries without a timestamp might have been deleted
+		// in the last step.
+		var toBeRemovedKeys = this._detectToBeRemovedKeys(entries, maxEntriesInLocalStorage);
+		toBeRemovedKeys.forEach(key => {
+			window.localStorage.removeItem(key);
+		});
+
+		return Promise.resolve();
+	},
+
+	/**
+	 * Return the entries
+	 * @param  {Array}	entries Entries to be considered
+	 * @param  {Number}	maxEntriesInLocalStorage
+	 * @return {Array}	Keys of the entries that should be returned
+	 */
+	_detectToBeRemovedKeys: function(entries, maxEntriesInLocalStorage) {
+		if (entries.length <= maxEntriesInLocalStorage) {
+			return [];
+		}
+
+		var toBeRemovedKeys = [];
+		// Sort newest first (we want to keep the first newest)
+		entries.sort((entry1, entry2) => {
+			return entry1.timestamp < entry2.timestamp;
+		});
+
+		// Remove oldest entries (expect the ones that we keep)
+		for (var i = maxEntriesInLocalStorage; i < entries.length; i++) {
+			toBeRemovedKeys.push(entries[i].key);
+		}
+
+		return toBeRemovedKeys;
+	}
+};
+
+</script>

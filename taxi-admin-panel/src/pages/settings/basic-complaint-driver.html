@@ -1,0 +1,75 @@
+<dom-module id="basic-complaint-driver">
+	<template>
+		<style>
+			:host {
+				display: block;
+				width: 100%;
+				padding-bottom: 10px;
+			}
+		</style>
+		<paper-datatable-card id="dataTableCard" header="{{localize('complaint-type-driver')}}" data-source="{{data}}" page-size="10" id-property="id" selected-ids="{{selectedIds}}">
+			<div slot="toolbar-main">
+				<paper-icon-button id="btnAddItem" icon="icons:add" on-tap="onAddItemClicked"></paper-icon-button>
+				<paper-tooltip for="btnAddItem">{{localize('add-item')}}</paper-tooltip>
+			</div>
+			<template is="dom-if" if$="[[canDelete('bt')]]">
+				<div slot="toolbar-select">
+					<paper-icon-button id="btnDeleteItems" icon="delete" on-tap="onDeleteItemsClicked"></paper-icon-button>
+					<paper-tooltip for="btnDeleteItems">{{localize('delete-items')}}</paper-tooltip>
+				</div>
+			</template>
+		</div>
+		<paper-datatable id="datatable" selectable selected-item="{{selectedItem}}" selected-key="{{selectedId}}">
+			<div no-results>{{localize('table-loading')}}</div>
+			<paper-datatable-column header="{{localize('column-id')}}" property="id" sortable
+			align="center" style="width: 10%" sorted></paper-datatable-column>
+			<paper-datatable-column header="{{localize('column-title')}}" property="title" editable dialog edit-icon
+			style="width: 70%"></paper-datatable-column>
+			<paper-datatable-column header="{{localize('column-importance')}}" property="importance" editable type="Number" style="width: 20%"></paper-datatable-column>
+		</paper-datatable>
+		
+	</paper-datatable-card>
+</template>
+<script>
+	let widgetComDrivers;
+	Polymer({
+		is: 'basic-complaint-driver',
+		behaviors:[
+		MyLocalizeBehavior
+		],
+		properties:{
+			data:{
+				type:Object,
+				value:{
+					get: function (sort, page, pageSize) {
+						let result = getBaseTypes('complaint_type_driver', sort, (page - 1) * pageSize, pageSize);
+						result.then(function (items) {
+							widgetComDrivers.set('data.length', items.length ? items[0].count : 0);
+						});
+						return result;
+					},
+					set: function (item, property, value) {
+						return setColumnValue('complaint_type_driver', item.id, property, value);
+					},
+					length:0
+				}
+			}
+		},
+		attached: function () {
+			widgetComDrivers = this;
+		},
+		onAddItemClicked: function () {
+			socket.emit('addBaseType', 'complaint_type_driver', function (insertId) {
+				widgetComDrivers.$.dataTableCard.retrieveVisibleData();
+				widgetComDrivers.selectedIds = [insertId];
+			});
+		},
+		onDeleteItemsClicked: function () {
+			socket.emit('deleteBaseTypes', 'complaint_type_driver', this.selectedIds, function () {
+				widgetComDrivers.$.dataTableCard.retrieveVisibleData();
+				widgetComDrivers.$.dataTableCard.deselectAll();
+			});
+		}
+	});
+</script>
+</dom-module>

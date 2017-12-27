@@ -1,0 +1,160 @@
+<dom-module id="tab-general">
+	<template>
+		<style include="shared-styles">
+			:host {
+				display: block;
+				padding: 10px;
+			}
+			.setting-card{
+				width: 100%;
+				margin-top: 10px;
+			}
+			paper-button.change-password {
+				background: var(--accent-color);
+				color: white;
+				margin-top: 16px;
+				margin-bottom: 8px;
+			}
+		</style>
+		<iron-localstorage name="language"
+		value="{{langSetting}}"></iron-localstorage>
+		<iron-localstorage name="theme"
+		value="{{themeSetting}}"></iron-localstorage>
+		<paper-dialog id="dlgPassword" style="min-width:500px;min-height:300px;" entry-animation="scale-up-animation"
+		exit-animation="fade-out-animation">
+		<h2>{{localize('change-password')}}</h2>
+		<paper-input id="inputOldPass" label="{{localize('old-password')}}" type="password"></paper-input>
+		<paper-input id="inputNewPass" label="{{localize('new-password')}}" type="password"></paper-input>
+		<paper-input id="inputConfirmPass" label="{{localize('confirm-password')}}" type="password"></paper-input>
+		<div class="buttons">
+			<paper-button dialog-dismiss>{{localize('dismiss')}}</paper-button>
+			<paper-button autofocus on-click="onChangePasswordConfirmed">{{localize('confirm')}}</paper-button>
+		</div>
+	</paper-dialog>
+	<paper-card class="setting-card" heading="{{localize('general-settings')}}">
+		<div class="card-content">
+			<paper-dropdown-menu label="Theme" style="width:100%"  horizontal-align="left">
+				<paper-listbox class="dropdown-content" attr-for-selected="theme-name" selected="{{themeSetting}}" >
+					<paper-item theme-name="candy">Candy</paper-item>
+					<paper-item theme-name="citric-flames">Citric Flames</paper-item>
+					<paper-item theme-name="candy">Candy</paper-item>
+					<paper-item theme-name="classical">Classical</paper-item>
+					<paper-item theme-name="dark-side">Dark Side</paper-item>
+					<paper-item theme-name="everest">Everest</paper-item>
+					<paper-item theme-name="gelati">Gelati</paper-item>
+					<paper-item theme-name="golden-goose">Golden Goose</paper-item>
+					<paper-item theme-name="ice">Ice</paper-item>
+					<paper-item theme-name="la-resistance">La Resistance</paper-item>
+					<paper-item theme-name="melon">Melon</paper-item>
+					<paper-item theme-name="seven-seas">Seven Seas</paper-item>
+					<paper-item theme-name="sky">Sky</paper-item>
+					<paper-item theme-name="technology">Technology</paper-item>
+					<paper-item theme-name="the-times">The Times</paper-item>
+				</paper-listbox>
+			</paper-dropdown-menu>
+			<paper-dropdown-menu label="Language" style="width:100%" horizontal-align="left">
+				<paper-listbox class="dropdown-content" attr-for-selected="language-name" selected="{{langSetting}}">
+					<paper-item language-name="en">English</paper-item>
+					<paper-item language-name="ar">العَرَبِيَّة</paper-item>
+					<paper-item language-name="fr">Français</paper-item>
+				</paper-listbox>
+			</paper-dropdown-menu>
+		</div>
+	</paper-card>
+	<paper-card class="setting-card" heading="{{localize('profile-settings')}}">
+		<div class="card-content">
+			<!--paper-input label="{{localize('column-email')}}"></paper-input>
+			<paper-input label="{{localize('column-address')}}"></paper-input-->
+			<div class="field-title">{{localize('column-profile-image')}}</div>
+			<vaadin-upload id="uploadProfile" on-upload-before="beforeUpload" accept="image/jpeg" max-files="1" max-file-size="5000000"></vaadin-upload>
+			<paper-button class="change-password" raised on-click="onChangePasswordClicked">{{localize('change-password')}}</paper-button>
+		</div>
+		<!--div class="card-actions">
+			<paper-button on-cli>{{localize('save')}}</paper-button>
+		</div-->
+	</paper-card>
+	<paper-toast id="toastSave" duration="3000" text="{{localize('prompt-saved')}}" horizontal-align="right">
+		<paper-button onclick="generalSettingsPage.$.toastSave.toggle()">{{localize('dismiss')}}</paper-button>
+	</paper-toast>
+</template>
+<script>
+	let generalSettingsPage;
+	Polymer({
+		is: 'tab-general',
+		behaviors: [
+		MyLocalizeBehavior
+		],
+		properties:{
+			themeSetting:{
+				type:String,
+				observer:'themeChanged'
+			},
+			langSetting:{
+				type:String,
+				observer:'languageChanged'
+			}
+		},
+		attached:function(){
+			generalSettingsPage = this;
+		},
+		themeChanged:function(value){
+			if(value == null)
+				return;
+			var resolvedPageUrl = this.resolveUrl('../../../themes/' + value + '.html');
+			this.importHref(resolvedPageUrl, null, null, true);
+		},
+		languageChanged:function(value){
+			app.set('language',value);
+		},
+		onChangePasswordClicked:function(){
+			this.$.dlgPassword.open();
+		},
+		onChangePasswordConfirmed:function(event){
+			if(this.$.inputNewPass.value != this.$.inputConfirmPass.value){
+				this.$.inputConfirmPass.invalid = true;
+				this.$.inputConfirmPass.errorMessage = app.localize('error-pass-dont-match');
+				return;
+			}
+			else
+				this.$.inputConfirmPass.invalid = false;
+			socket.emit('updateOperatorPassword',this.$.inputOldPass.value,this.$.inputNewPass.value,function(result){
+				if(result == 200){
+					generalSettingsPage.$.inputOldPass.value = '';
+					generalSettingsPage.$.inputNewPass.value = '';
+					generalSettingsPage.$.inputConfirmPass.value = '';
+					generalSettingsPage.$.dlgPassword.close();
+					generalSettingsPage.$.toastSave.toggle();
+					generalSettingsPage.$.inputConfirmPass.invalid = false;
+					generalSettingsPage.$.inputOldPass.invalid = false;
+
+				}
+				else{
+					generalSettingsPage.$.inputOldPass.invalid = true;
+					generalSettingsPage.$.inputOldPass.errorMessage = app.localize('error-pass-not-correct');
+				}
+			});
+		},
+		beforeUpload:function (event) {
+			event.preventDefault();
+			let file = event.detail.file;
+			let fileIndex = this.$.uploadProfile.files.indexOf(file);
+			var reader = new FileReader();
+			reader.onload = function(e) {
+				let arrayBuffer = reader.result;
+				socket.emit('updateOperatorProfile',arrayBuffer,function(resultCode,filePath) {
+					if(resultCode == 200) {
+						generalSettingsPage.$.uploadProfile.set(['files', fileIndex, 'progress'], 100);
+						generalSettingsPage.$.uploadProfile.set(['files', fileIndex, 'complete'], true);
+						generalSettingsPage.fire('file-received', file);
+						generalSettingsPage.$.toastSave.toggle();
+						app.set('userStorage.image',filePath);
+					}
+					else
+						generalSettingsPage.$.uploadProfile.set(['files', fileIndex, 'error'], resultCode);
+				});
+			}
+			reader.readAsArrayBuffer(file);
+		}
+	});
+</script>
+</dom-module>

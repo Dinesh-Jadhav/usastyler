@@ -1,0 +1,72 @@
+<!doctype html>
+<html>
+<head>
+  <title>fop-avatar demo</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+  <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+
+  <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
+  <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
+
+  <link rel="import" href="../fop-avatar.html">
+
+  <style is="custom-style" include="demo-pages-shared-styles">
+  fop-avatar{
+    padding: 1%;
+  }
+  .small{
+    --fop-avatar-width : 50px;
+    --fop-avatar-height : 50px;
+    --fop-avatar-bg : #16a085;
+  }
+  .medium{
+    --fop-avatar-width : 65px;
+    --fop-avatar-height : 65px;
+    --fop-avatar-bg : #E91E63;
+  }
+  .big{
+    --fop-avatar-width : 80px;
+    --fop-avatar-height :  80px;
+  }
+  </style>
+</head>
+<body>
+
+  <div class="vertical-section-container centered">
+    <h1>Basic fop-avatar Demo</h1>
+    <demo-snippet>
+      <template is="dom-bind" id="app">
+
+        <h2>Generate Avatar From string</h2>
+        <fop-avatar string="Hyyan" class="big" on-tap="toggleSelection"></fop-avatar>
+        <fop-avatar string="Maya" class="medium" on-tap="toggleSelection"></fop-avatar>
+        <fop-avatar string="Qaise" class="small" on-tap="toggleSelection"></fop-avatar>
+
+        <h2>Generate Avatar From Source</h2>
+        <fop-avatar src="{{src}}" class="big" on-tap="toggleSelection"></fop-avatar>
+        <fop-avatar src="{{src}}" class="medium" on-tap="toggleSelection"></fop-avatar>
+        <fop-avatar src="{{src}}" class="small" on-tap="toggleSelection"></fop-avatar>
+
+        <h2>Selected Avatar</h2>
+        <fop-avatar string="Hyyan" class="big" selected selected-icon="icons:done-all"></fop-avatar>
+        <fop-avatar string="Hyyan" class="medium" selected selected-icon="icons:done"></fop-avatar>
+        <fop-avatar string="Hyyan" class="small" selected></fop-avatar>
+      </template>
+    </demo-snippet>
+  </div>
+
+  <script>
+   var app = document.querySelector('#app');
+
+   app.src = './avatar.png';
+
+   app.toggleSelection = function (e){
+     var target = Polymer.dom(e).localTarget;
+     e.stopPropagation();
+     target.selected = !target.selected;
+   };
+
+  </script>
+</body>
+</html>

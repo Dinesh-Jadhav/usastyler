@@ -1,0 +1,72 @@
+<dom-module id="widget-today">
+	<template>
+		<style>
+			:host {
+				display: block;
+				background-color: #aed581;
+				width: 100%;
+				padding: 30px;
+			}
+			h2,p,li{
+				color: white;
+				margin: 0;
+			}
+			.w-100{
+				font-weight: 100;
+			}
+			.reminder-title{
+				border-bottom: 1px rgba(255,255,255,.3) solid;
+				margin-top: 20px;
+			}
+			.list-reminder{
+				list-style: none;
+				padding: 0;
+			}
+			.list-reminder iron-icon{
+				height: 20px;
+			}
+		</style>
+		<div class="vertical">
+			<h2 class="header">[[dayOfWeek]]</h2>
+			<h2 class="subheader w-100">[[todayDate]]</h2>
+			<p class="reminder-title w-100">REMINDERS</p>
+			<ul class="list-reminder">
+				<template is="dom-repeat" items="{{reminders}}">
+					<li><iron-icon icon="icons:check"></iron-icon><span>[[item.title]]</span></li>
+				</template>
+			</ul>
+		</div>
+	</template>
+	<script>
+		let elementToday;
+		Polymer({
+			is: 'widget-today',
+			properties:{
+			    reminders:{
+			        type:Array,
+					value:function () {
+
+                    }
+				},
+				todayDate:{
+			        type:String,
+					value:function () {
+						return moment().format('MMMM Do YYYY');
+                    }
+				},
+                dayOfWeek:{
+			        type:String,
+                    value:function(){
+			            return moment().format('dddd')
+                    }
+                }
+			},
+			attached:function (){
+			    elementToday = this;
+                socket.emit('getReminders', moment().format('YYYY/MM/DD'), function (result) {
+                    elementToday.reminders = result;
+                });
+			}
+		});
+	</script>
+</dom-module>

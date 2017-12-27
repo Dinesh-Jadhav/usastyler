@@ -1,0 +1,51 @@
+<link rel="import" href="stat.html">
+<dom-module id="widget-stats">
+	<template>
+		<style include="app-grid-style">
+			:host {
+				--app-grid-columns: 5;
+				//--app-grid-item-height: 40px;
+				--app-grid-gutter: 10px;
+				display: flex;
+				width: 100%;
+			}
+			.stat{
+				//display: flex;
+			}
+			.orange {
+				--my-icon-color: var(--paper-orange-300);
+			}
+			.teal {
+				--my-icon-color: var(--paper-teal-300);
+			}
+			.purple {
+				--my-icon-color: var(--paper-purple-300);
+			}
+			.light-green {
+				--my-icon-color: var(--paper-light-green-300);
+			}
+			.indigo {
+				--my-icon-color: var(--paper-indigo-300);
+			}
+		</style>
+		<div class="app-grid">
+			<widget-stat class="stat orange" icon="icons:rowing" number="[[statistics.driver_count]]" title="Drivers"></widget-stat>
+			<widget-stat class="stat teal" icon="social:people" number="[[statistics.rider_count]]" title="Riders"></widget-stat>
+			<widget-stat class="stat purple" icon="icons:card-travel" number="[[statistics.travel_count]]" title="Travels"></widget-stat>
+			<widget-stat class="stat light-green" icon="editor:attach-money" number="[[statistics.unpaid_count]]" title="Payments waiting"></widget-stat>
+			<widget-stat class="stat indigo" icon="icons:info-outline" number="[[statistics.waiting_complaints]]" title="Complaints waiting"></widget-stat>
+		</div>
+	</template>
+	<script>
+	let widgetStats;
+		Polymer({
+			is: 'widget-stats',
+			attached:function () {
+				widgetStats = this;
+				socket.emit('getBaseData',function(result){
+					widgetStats.statistics = result;
+				});
+			}
+		});
+	</script>
+</dom-module>

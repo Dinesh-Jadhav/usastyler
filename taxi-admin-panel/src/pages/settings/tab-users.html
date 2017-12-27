@@ -1,0 +1,217 @@
+<dom-module id="tab-users">
+    <template>
+        <style include="iron-flex iron-flex-alignment">
+            :host {
+                display: block;
+            }
+
+            #dataTableCard {
+                padding: 10px;
+            }
+
+            .slider-subtitle {
+                margin: -5px 0 5px;
+            }
+
+            .slider-title {
+                margin-top: 10px;
+            }
+        </style>
+        <paper-toolbar>
+            <span class="title"></span>
+            <paper-icon-button id="btnAddItem" icon="add" on-click="onAddItem">+</paper-icon-button>
+            <paper-tooltip for="btnAddItem">{{localize('add-item')}}</paper-tooltip>
+        </paper-toolbar>
+        <paper-dialog id="dlgEditItem" style="max-width:500px;min-height:300px;" entry-animation="scale-up-animation"
+                      exit-animation="fade-out-animation">
+            <paper-dialog-scrollable>
+                <template is="dom-repeat" items="{{selectedItems}}">
+                    <h2>{{localize('edit-dialog-item-number')}}<span>{{item.id}}</span></h2>
+                    <div class="layout vertical">
+                        <div class="horizontal layout">
+                            <paper-input value="{{item.first_name}}" label="{{localize('column-first-name')}}"
+                                         class="flex"></paper-input>
+                            <paper-input value="{{item.last_name}}" label="{{localize('column-last-name')}}"
+                                         class="flex"></paper-input>
+                        </div>
+                        <div class="horizontal layout">
+                            <paper-input value="{{item.mobile_number}}" label="{{localize('column-mobile-number')}}"
+                                         class="flex"></paper-input>
+                            <paper-input value="{{item.phone_number}}" label="{{localize('column-phone-number')}}"
+                                         class="flex"></paper-input>
+                        </div>
+                        <div class="horizontal layout">
+                            <paper-input value="{{item.email}}" label="{{localize('column-email')}}"
+                                         class="flex"></paper-input>
+                        </div>
+                        <div class="horizontal layout">
+                            <paper-input value="{{item.address}}" label="{{localize('column-address')}}"
+                                         class="flex"></paper-input>
+                        </div>
+                        <div class="floated-label-placeholder slider-title">{{localize('column-base-types-access')}}</div>
+                        <paper-slider style="width:100%;" min="0" pin snaps max="3" max-markers="3" step="1"
+                                      value="{{item.access_base_types}}"></paper-slider>
+                        <h6 class="slider-subtitle">{{computeTableAccessLevel(item.access_base_types)}}</h6>
+
+                        <div class="floated-label-placeholder slider-title">{{localize('column-stats-access')}}</div>
+                        <paper-slider style="width:100%;" min="0" pin snaps max="3" max-markers="3" step="1"
+                                      value="{{item.access_stats}}"></paper-slider>
+                        <h6 class="slider-subtitle">{{computeStatsAccessLevel(item.access_stats)}}</h6>
+
+                        <div class="floated-label-placeholder slider-title">{{localize('column-users-access')}}</div>
+                        <paper-slider style="width:100%;" min="0" pin snaps max="3" max-markers="3" step="1"
+                                      value="{{item.access_users}}"></paper-slider>
+                        <h6 class="slider-subtitle">{{computeTableAccessLevel(item.access_users)}}</h6>
+
+                        <div class="floated-label-placeholder slider-title">{{localize('column-drivers-access')}}</div>
+                        <paper-slider style="width:100%;" min="0" pin snaps max="3" max-markers="3" step="1"
+                                      value="{{item.access_drivers}}"></paper-slider>
+                        <h6 class="slider-subtitle">{{computeTableAccessLevel(item.access_drivers)}}</h6>
+
+                        <div class="floated-label-placeholder slider-title">{{localize('column-travels-access')}}</div>
+                        <paper-slider style="width:100%;" min="0" pin snaps max="3" max-markers="3" step="1"
+                                      value="{{item.access_travels}}"></paper-slider>
+                        <h6 class="slider-subtitle">{{computeTableAccessLevel(item.access_travels)}}</h6>
+
+                        <div class="floated-label-placeholder slider-title">{{localize('column-complaints-access')}}
+                        </div>
+                        <paper-slider style="width:100%;" min="0" pin snaps max="3" max-markers="3" step="1"
+                                      value="{{item.access_complaints}}"></paper-slider>
+                        <h6 class="slider-subtitle">{{computeTableAccessLevel(item.access_complaints)}}</h6>
+
+                        <div class="floated-label-placeholder slider-title">
+                            {{localize('column-call-requests-access')}}
+                        </div>
+                        <paper-slider style="width:100%;" min="0" pin snaps max="3" max-markers="3" step="1"
+                                      value="{{item.access_call_requests}}"></paper-slider>
+                        <h6 class="slider-subtitle">{{computeTableAccessLevel(item.access_call_requests)}}</h6>
+
+                        <div class="floated-label-placeholder slider-title">
+                            {{localize('column-payment-requests-access')}}
+                        </div>
+                        <paper-slider style="width:100%;" min="0" pin snaps max="3" max-markers="3" step="1"
+                                      value="{{item.access_payment_requests}}"></paper-slider>
+                        <h6 class="slider-subtitle">{{computeTableAccessLevel(item.access_payment_requests)}}</h6>
+                    </div>
+
+                </template>
+            </paper-dialog-scrollable>
+            <div class="buttons">
+                <paper-button dialog-dismiss>{{localize('dismiss')}}</paper-button>
+                <paper-button dialog-confirm autofocus on-click="refreshList">{{localize('confirm')}}</paper-button>
+            </div>
+        </paper-dialog>
+        <paper-datatable-card id="dataTableCard" header="{{localize('users')}}" data-source="{{data}}" page-size="10"
+                              id-property="id"
+                              selected-ids="{{selectedIds}}">
+            <div slot="toolbar-main">
+                </paper-input>
+                <paper-icon-button icon="cached" on-tap="refreshList"></paper-icon-button>
+            </div>
+            <div slot="toolbar-select">
+                <paper-icon-button id="btnDeleteItems" icon="delete" on-tap="onDeleteItems"></paper-icon-button>
+                <paper-tooltip for="btnDeleteItems">{{localize('delete-items')}}</paper-tooltip>
+            </div>
+            <div slot="toolbar-select-single">
+                <paper-icon-button id="btnEdit" icon="image:edit" on-tap="onEditItem"></paper-icon-button>
+                <paper-tooltip for="btnEdit">{{localize('edit-item')}}</paper-tooltip>
+            </div>
+            <paper-datatable id="datatable" selectable multi-selection
+                             selected-items="{{selectedItems}}" on-row-tap="rowTapped">
+                <div no-results>
+                    {{localize('table-loading')}}
+                </div>
+                <paper-datatable-column header="{{localize('column-id')}}" property="id" sortable
+                                        align="center" style="width: 5%" sorted></paper-datatable-column>
+                <paper-datatable-column header="{{localize('column-first-name')}}" property="first_name"
+                                        style="width: 14%">
+                </paper-datatable-column>
+                <paper-datatable-column header="{{localize('column-last-name')}}" property="last_name"
+                                        style="width: 14%">
+                </paper-datatable-column>
+                <paper-datatable-column header="{{localize('column-phone-number')}}" property="phone_number"
+                                        style="width: 19%">
+                </paper-datatable-column>
+                <paper-datatable-column header="{{localize('column-mobile-number')}}" property="mobile_number"
+                                        style="width: 19%">
+                </paper-datatable-column>
+                <paper-datatable-column header="{{localize('column-email')}}" property="email"
+                                        style="width: 14%">
+                </paper-datatable-column>
+                <paper-datatable-column header="{{localize('column-address')}}" property="address"
+                                        style="width: 15%">
+                </paper-datatable-column>
+            </paper-datatable>
+        </paper-datatable-card>
+    </template>
+
+    <script>
+        let usersSettingsPage;
+        Polymer({
+            is: 'tab-users',
+            behaviors: [
+                MyLocalizeBehavior
+            ],
+            attached: function () {
+                usersSettingsPage = this;
+            },
+            properties: {
+                data: {
+                    type: Object,
+                    value: {
+                        get: function (sort, page, pageSize) {
+                            let result = getAllOperators(sort, (page - 1) * pageSize, pageSize);
+                            result.then(function (items) {
+                                usersSettingsPage.set('data.length', items.length ? items[0].count : 0);
+                            });
+                            return result;
+                        },
+                        set: function (item, property, value) {
+                            return setColumnValue('operator', item.id, property, value);
+                        },
+                        length: 0
+                    }
+                }
+            },
+            rowTapped: function (ev) {
+                if (this.isDebouncerActive('dblclick' + ev.detail.item.id)) {
+                    ev.preventDefault();
+                    this.$.dataTableCard.deselectAll();
+                    this.$.dataTableCard.select(ev.detail.item.id);
+                    this.onEditItem();
+                    this.cancelDebouncer('dblclick');
+                } else {
+                    this.debounce('dblclick' + ev.detail.item.id, function () {
+                    }, 300);
+                }
+            },
+            refreshList: function (ev) {
+                this.$.dataTableCard.retrieveVisibleData();
+            },
+            onDeleteItems: function () {
+                socket.emit('deleteOperators', usersSettingsPage.selectedIds, function () {
+                    usersSettingsPage.$.dataTableCard.retrieveVisibleData();
+                    usersSettingsPage.$.dataTableCard.deselectAll();
+                });
+            },
+            onAddItem: function () {
+                socket.emit('addOperator', function (driverId) {
+                    usersSettingsPage.selectedIds = [driverId];
+                    usersSettingsPage.$.dataTableCard.retrieveVisibleData();
+                    usersSettingsPage.$.dlgEditItem.open();
+                });
+            },
+            onEditItem: function () {
+                this.$.dlgEditItem.open();
+            },
+            computeStatsAccessLevel(value){
+                const str = 'stats-access-' + value;
+                return this.localize(str);
+            },
+            computeTableAccessLevel(value){
+                const str = 'table-access-' + value;
+                return this.localize(str);
+            },
+        });
+    </script>
+</dom-module>

@@ -1,0 +1,38 @@
+<link rel="import" href="basic-cars.html">
+<link rel="import" href="basic-complaint-driver.html">
+<link rel="import" href="basic-complaint-rider.html">
+<link rel="import" href="basic-driver-types.html">
+<link rel="import" href="basic-travel-types.html">
+<link rel="import" href="../../../bower_components/app-layout/app-grid/app-grid-style.html">
+<dom-module id="tab-basics">
+  <template>
+    <style include="app-grid-style">
+      :host {
+        --app-grid-columns: 2;
+        --app-grid-item-height: 50%;
+        --app-grid-gutter: 10px;
+        --app-grid-expandible-item-columns: 2;
+      }
+      .extended{
+        @apply(--app-grid-expandible-item);
+      }
+    </style>
+
+    <div class="app-grid">
+      <basic-complaint-driver class="card"></basic-complaint-driver>
+      <basic-complaint-rider class="card"></basic-complaint-rider>
+      <basic-travel-types class="card extended"></basic-travel-types>
+      <basic-driver-types class="card"></basic-driver-types>
+      <basic-cars class="card"></basic-cars>
+      <!--<basic-cars class="card"></basic-cars>
+      <basic-cars class="card"></basic-cars>
+      <basic-cars class="card"></basic-cars>-->
+    </div>
+  </template>
+
+  <script>
+    Polymer({
+      is: 'tab-basics',
+    });
+  </script>
+</dom-module>

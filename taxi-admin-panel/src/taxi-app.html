@@ -1,0 +1,97 @@
+<link rel="import" href="elements/shared-imports.html">
+<link rel="import" href="screen-splash.html">
+<link rel="import" href="elements/my-meta.html">
+<dom-module id="taxi-app">
+	<template>
+		<style include="iron-flex iron-flex-alignment">
+			:host {
+				display: block;
+				height: 100vh;
+			}
+		</style>
+		<iron-localstorage name="user" value="{{userStorage}}"></iron-localstorage>
+		<div>
+			<iron-pages selected="{{selectedScreen}}" attr-for-selected="name" role="main">
+				<screen-splash name="splash"></screen-splash>
+				<screen-login name="login" on-logged-in="connect"></screen-login>
+				<screen-main name="main"></screen-main>
+			</iron-pages>
+		</div>
+	</template>
+
+	<script>
+		let socket;
+		let app;
+		function connect_socket(token) {
+			const serverAddress = document.createElement('iron-meta').byKey('server') + 'operators';
+			socket = io(serverAddress, {
+				query: 'token=' + token,
+				forceNew: true
+			});
+			socket.on("error", function (error) {
+				console.log(error);
+				if (error.type === "UnauthorizedError" || error.code === "invalid_token") {
+					//app.$.dialogLogin.open();
+					app.gotoLoginPage();
+				}
+				if(error == "access_revoked"){
+					//app.$.dialogLogin.open();
+					app.gotoLoginPage();
+				}
+			});
+			socket.on("disconnect", function () {
+				console.log('disconnected');
+			});
+			socket.on("connect", function () {
+				console.log("connected");
+				app.gotoMainPage();
+			});
+			
+			socket.on('callRequested', function (callData) {
+				console.log(callData);
+				app.$.toast1.text = app.localize('toast-call-request', 'driverName', callData.driverName, 'riderName', callData.riderName, 'riderNumber', callData.riderNumber);
+				app.$.toast1.open();
+			});
+			socket.connect();
+		}
+		
+		Polymer({
+			is: 'taxi-app',
+			properties:{
+				selectedScreen:{
+					type:String,
+					value:"splash"
+				}
+			},
+			attached:function(){
+				app = this;
+				this.loadTheme();
+				if(this.userStorage)
+					connect_socket(this.userStorage.token);
+				else
+					this.gotoLoginPage();
+			},
+			connect:function (event) {
+				if(event.detail)
+					connect_socket(event.detail);
+				else
+					this.gotoLoginPage();
+			},
+			gotoLoginPage:function () {
+				this.selectedScreen = "login";
+				var resolvedPageUrl = this.resolveUrl('screen-login.html');
+				this.importHref(resolvedPageUrl, null, null, true);
+			},
+			gotoMainPage:function(){
+				this.selectedScreen = "main";
+				var resolvedPageUrl = this.resolveUrl('screen-main.html');
+				this.importHref(resolvedPageUrl, null, null, true);
+			},
+			loadTheme:function () {
+				let theme = JSON.parse(window.localStorage.getItem('theme')) || 'classical';
+				var resolvedPageUrl = this.resolveUrl('../themes/' + theme + '.html');
+				this.importHref(resolvedPageUrl, null, null, true);
+			}
+		});
+	</script>
+</dom-module>

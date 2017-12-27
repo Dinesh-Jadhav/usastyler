@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<!--
+This file is part of the FriendsOfPolymer/fop-avatar.
+(c) Hyyan Abo Fakher <hyyanaf@gmail.com>
+For the full copyright and license information, please view the LICENSE
+file that was distributed with this source code.
+-->
+
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../paper-ripple/paper-ripple.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout-classes.html">
+
+<!--
+
+# FOP Avatar
+
+The element represents selectable avatar where avatar can be set from image source
+or from the first letter of given string
+
+<b>Note</b> : The element inspired from Eric Bidelman awesome demo
+https://github.com/ebidel/polymer-gmail/blob/master/elements/profile-img.html
+
+## Example
+
+```html
+<fop-avatar string="Username"></fop-avatar>
+<fop-avatar src="path/to/img"></fop-avatar>
+```
+### Styling
+
+`<fop-avatar>` provides the following custom properties and mixins
+for styling:
+
+Custom property | Description | Default
+----------------|-------------|----------
+`--fop-avatar-width` | avatar width | 50px
+`--fop-avatar-height` | avatar height | 50px
+`--fop-avatar-bg` | avatar background-color | #f39c12
+`--fop-avatar-color` | avatar font color | white
+`--fop-avatar-cursor` | avatar cursor | pointer
+`--fop-avatar-avatar` | Mixin applied to the avatar | `{}`
+`--fop-avatar` | Mixin applied to the avatar | `{}`
+`--fop-avatar-img` | Mixin applied to the avatar img | `{}`
+`--fop-avatar-string` | Mixin applied to the avatar string | `{}`
+`--fop-avatar-icon` | Mixin applied to the avatar selected icon | `{}`
+`--fop-avatar-selected` | Mixin applied to the avatar in selected status | `{}`
+`--fop-avatar-selected-img` | Mixin applied to the avatar img in selected status | `{}`
+`--fop-avatar-selected-string` | Mixin applied to the avatar string in selected status | `{}`
+`--fop-avatar-selected-icon` | Mixin applied to the avatar icon in selected status | `{}`
+
+
+@group FriendsOfPolymer
+@element fop-avatar
+@hero hero.svg
+@demo demo/index.html
+-->
+
+<dom-module id="fop-avatar">
+
+  <template>
+
+  <style include="iron-flex iron-flex-alignment">
+  :host{
+    display: inline-block;
+    position: relative;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+
+    /*You just need this if you are only concerned with android and not desktop browsers.*/
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    outline: 0;
+  }
+
+  :host([selected]) .avatar {
+    transform: rotateY(180deg) scale(1);
+    @apply(--fop-avatar-selected);
+  }
+
+  :host([selected]) img{
+    opacity: 0.2;
+    @apply(--fop-avatar-selected-img);
+  }
+
+  :host([selected]) .letter {
+    opacity: 0;
+    @apply(--fop-avatar-selected-string);
+  }
+  :host([selected]) iron-icon {
+    transform: rotate3d(0,1,0,-180deg) scale(1);
+    opacity: 1;
+    @apply(--fop-avatar-selected-icon);
+  }
+
+  .avatar {
+    border-radius: 50%;
+    padding: 10px;
+    width: var(--fop-avatar-width , 50px);
+    height: var(--fop-avatar-height , 50px);
+    transition: transform 350ms ease-in-out;
+    background-color: var(--fop-avatar-bg , #f39c12);
+    color: var(--fop-avatar-color , white);
+    will-change: transform;
+    cursor: var(--fop-avatar-cursor, pointer);
+    @apply(--fop-avatar)
+  }
+  img,
+  .letter {
+    border-radius: 50%;
+    position: relative !important;
+    top: -11px ;
+    left: -11px ;
+    width:  calc(var(--fop-avatar-width , 50px) + 23px);
+    height: calc(  var(--fop-avatar-height , 50px) + 22px);
+    transition: opacity 200ms ease-in-out 100ms;
+    will-change: opacity;
+  }
+  img{
+    @apply(--fop-avatar-img)
+  }
+  .letter {
+    text-transform: uppercase;
+    font-size: 3em;
+    @apply(--fop-avatar-string)
+  }
+  iron-icon {
+    transition: transform 300ms ease-in-out 100ms;
+    will-change: opacity;
+    transform: rotate3d(0,1,0,-180deg) scale(0);
+    position: absolute !important;
+    outline: none !important;
+    top: 10px;
+    left: 10px;
+    opacity: 0;
+    font-size: 10rem;
+    --iron-icon-width : var(--fop-avatar-width, 50px);
+    --iron-icon-height : var(--fop-avatar-width, 50px);
+    @apply(--fop-avatar-selected-icon)
+  }
+
+  </style>
+
+  <div class="avatar">
+    <paper-ripple></paper-ripple>
+    <template is="dom-if" if="{{src}}">
+      <img class="img" src$="{{src}}">
+      <paper-ripple></paper-ripple>
+    </template>
+    <span class="letter layout horizontal center-center" hidden$="{{_isValidSrc(src)}}">
+      {{_letter}}
+    </span>
+    <iron-icon icon="{{selectedIcon}}"></iron-icon>
+  </div>
+
+</template>
+
+<script>
+Polymer({
+  is: 'fop-avatar',
+  properties: {
+
+    /**
+    * Selected
+    *
+    * Define if the avatar is selected
+    */
+    selected: {
+      type: Boolean,
+      value: false,
+      reflectToAttribute: true,
+      notify: true,
+    },
+
+    /**
+    * Selected icon
+    *
+    * One of polymer icons to be used on the avatar is selected , the default
+    * value is "check"
+    */
+    selectedIcon : {
+      type: String,
+      value: 'check'
+    },
+
+    /**
+    * Src
+    *
+    * Define the Avatar Src img  , if not definded then the string property will
+    * be used
+    */
+    src: {
+      type: String,
+      value: null
+    },
+
+    /**
+    * String
+    *
+    * A helper sting to generate an image with the first letter from the given
+    * string when the src is not definded.
+    */
+    string: {
+      type: String,
+      value: null
+    },
+
+    /**
+    * letter
+    *
+    * Computed property to get the first letter from the string property
+    */
+    _letter : {
+      type: String,
+      value: null,
+      computed : '_getFirstLetter(string)'
+    }
+  },
+
+  /**
+  * Get First letter
+  *
+  * Get the first letter from the given string
+  *
+  * @param {String} string
+  *
+  * @return string first letter
+  */
+  _getFirstLetter : function(string){
+    if(string) return string[0];
+  },
+
+  /**
+  * Is Valid Src
+  *
+  * Check if the given src is valid , by converting into boolean
+  *
+  * @return {Boolean} true if valid , false otherwise
+  */
+  _isValidSrc : function(){
+    return Boolean(this.src);
+  }
+
+});
+</script>
+</dom-module>
+</dom-module>

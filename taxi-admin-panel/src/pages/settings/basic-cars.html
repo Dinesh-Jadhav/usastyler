@@ -1,0 +1,133 @@
+<dom-module id="basic-cars">
+	<template>
+		<style>
+			:host {
+				display: block;
+				width: 100%;
+				padding-bottom: 10px;
+			}
+			.toolbar {
+				height: 40px;
+				background-color: #03a9f4;
+			}
+			.header {
+				color: white;
+				margin-top: 0;
+				margin-bottom: 5px;
+				padding-top: 12px;
+				padding-left: 20px;
+				display: inline-flex;
+			}
+			paper-button.button-save {
+				background: var(--accent-color);
+				color: white;
+				flex-grow: 1;
+				align-self: flex-end;
+			}
+			.bottom-card{
+				width:100%;
+
+			}
+			.input-item {
+			}
+
+			.bottom-bar {
+				display: flex;
+				flex-direction: column;
+				padding: 10px;
+			}
+		</style>
+		<paper-datatable-card id="dataTableCard" header="{{localize('cars')}}" data-source="{{data}}" page-size="10" id-property="id" selected-ids="{{selectedIds}}">
+			<div slot="toolbar-main">
+				<paper-icon-button id="btnAddItem" icon="icons:add" on-tap="onAddItemClicked"></paper-icon-button>
+				<paper-tooltip for="btnAddItem">{{localize('add-item')}}</paper-tooltip>
+			</div>
+			<template is="dom-if" if$="[[canDelete('bt')]]">
+				<div slot="toolbar-select">
+					<paper-icon-button id="btnDeleteItems" icon="delete" on-tap="onDeleteItemsClicked"></paper-icon-button>
+					<paper-tooltip for="btnDeleteItems">{{localize('delete-items')}}</paper-tooltip>
+				</div>
+			</template>
+		</div>
+		<paper-datatable id="datatable" selectable selected-item="{{selectedItem}}" selected-key="{{selectedId}}">
+			<div no-results>{{localize('table-loading')}}</div>
+			<paper-datatable-column header="{{localize('column-id')}}" property="id" sortable
+			align="center" style="width: 10%" sorted></paper-datatable-column>
+			<paper-datatable-column header="{{localize('column-title')}}" property="title" editable dialog edit-icon
+			style="width: 90%"></paper-datatable-column>
+		</paper-datatable>
+		
+	</paper-datatable-card>
+	<paper-card class="bottom-card">
+		<div class="card-content">
+				<div class="bottom-bar">
+					<iron-image style="width:100%; height:200px;" sizing="contain" src$="{{getAbsoluteAddress(selectedItem.image_address)}}"></iron-image>
+					<vaadin-upload id="uploaderImage" class="input-item" on-upload-before="beforeUpload" accept="image/jpeg" max-files="1" max-file-size="5000000"></vaadin-upload>
+				</div>
+		</div>
+	</paper-card>
+</template>
+<script>
+	let widgetCars;
+	Polymer({
+		is: 'basic-cars',
+		behaviors:[
+		MyLocalizeBehavior
+		],
+		properties:{
+			data:{
+				type:Object,
+				value:{
+					get: function (sort, page, pageSize) {
+						let result = getBaseTypes('car', sort, (page - 1) * pageSize, pageSize);
+						result.then(function (items) {
+							widgetCars.set('data.length', items.length ? items[0].count : 0);
+						});
+						return result;
+					},
+					set: function (item, property, value) {
+						return setColumnValue('car', item.id, property, value);
+					},
+					length:0
+				}
+			}
+		},
+		attached: function () {
+			widgetCars = this;
+		},
+		onAddItemClicked: function () {
+			socket.emit('addBaseType', 'car', function (driverId) {
+				widgetCars.$.dataTableCard.retrieveVisibleData();
+				widgetCars.selectedIds = [driverId];
+			});
+		},
+		onDeleteItemsClicked: function () {
+			socket.emit('deleteBaseTypes', 'car', this.selectedIds, function () {
+				widgetCars.$.dataTableCard.retrieveVisibleData();
+				widgetComDrivers.$.dataTableCard.deselectAll();
+			});
+		},
+		beforeUpload:function (event) {
+			event.preventDefault();
+			let file = event.detail.file;
+			let fileIndex = this.$$('#uploaderImage').files.indexOf(file);
+			var reader = new FileReader();
+			reader.onload = function(e) {
+				let arrayBuffer = reader.result;
+				socket.emit('setRideImage',arrayBuffer,widgetCars.selectedIds[0],function(resultCode,filePath) {
+					if(resultCode == 200) {
+						widgetCars.$$('#uploaderImage').set(['files', fileIndex, 'progress'], 100);
+						widgetCars.$$('#uploaderImage').set(['files', fileIndex, 'complete'], true);
+						widgetCars.fire('file-received', file);
+						//widgetCars.$.toastSave.toggle();
+						widgetCars.set('selectedItem.image_address',filePath);
+					}
+					else
+						widgetCars.$.uploaderImage.set(['files', fileIndex, 'error'], resultCode);
+				});
+			}
+			reader.readAsArrayBuffer(file);
+		}
+	});
+</script>
+</dom-module>

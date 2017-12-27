@@ -1,0 +1,37 @@
+{
+  "entrypoint": "index.html",
+  "shell": "src/taxi-app.html",
+  "fragments": [
+    "src/screen-splash.html",
+    "src/screen-main.html",
+    "src/pages/dashboard/dashboard.html",
+    "src/pages/call-requests/call-requests.html",
+    "src/pages/complaints/complaints.html",
+    "src/pages/drivers/drivers.html",
+    "src/pages/payment-requests/payment-requests.html",
+    "src/pages/settings/settings.html",
+    "src/view404.html"
+  ],
+  "sources": [
+    "src/**/*",
+    "images/**/*",
+    "bower.json"
+  ],
+  "extraDependencies": [
+    "manifest.json",
+    "data/behaviors/my-localization-behavior.html",
+    "bower_components/webcomponentsjs/webcomponents-lite.min.js"
+  ],
+  "builds": [{
+    "name": "bundled",
+    "bundle": true,
+    "js": {"minify": true},
+    "css": {"minify": true},
+    "html": {"minify": true}
+  },{
+    "name": "unbundled",
+    "js": {"minify": true},
+    "css": {"minify": true},
+    "html": {"minify": true}
+  }]
+}

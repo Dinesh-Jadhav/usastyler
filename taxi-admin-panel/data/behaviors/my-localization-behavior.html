@@ -1,0 +1,54 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/app-localize-behavior/app-localize-behavior.html">
+<script>
+/**
+* `MyLocalizeBehaviorImpl` is taking care of localization accross multiple pages
+* it also have functions for permission checks
+*
+* @polymerBehavior MyLocalizeBehavior
+*/
+  MyLocalizeBehaviorImpl = {
+    properties: {
+      language: {
+        value: function(){
+          let lang = JSON.parse(window.localStorage.getItem('language'));
+          return (lang || 'en');
+        }
+      },
+    },
+    attached: function() {
+      this.loadResources(this.resolveUrl('../../../../../data/locales.json'));
+    },
+    getAbsoluteAddress: function (relativeAddress){
+      if(relativeAddress && relativeAddress !== "img/operator/null")
+        return document.createElement('iron-meta').byKey('server') + relativeAddress;
+      else
+        return "userImages/avatar.png";
+    },
+    canSee: function (table){
+      const userInfo = JSON.parse(window.localStorage.getItem('user'));
+      if(userInfo['p_' + table] > 0)
+        return true;
+      else
+        return false;
+    },
+    canEdit: function (table){
+      const userInfo = JSON.parse(window.localStorage.getItem('user'));
+      if(userInfo['p_' + table] > 1)
+        return true;
+      else
+        return false;
+    },
+    canDelete: function (table){
+      const userInfo = JSON.parse(window.localStorage.getItem('user'));
+      if(userInfo['p_' + table] > 2)
+        return true;
+      else
+        return false;
+    }
+  };
+/**
+ * @polymerBehavior
+ */
+  MyLocalizeBehavior = [MyLocalizeBehaviorImpl, Polymer.AppLocalizeBehavior]; 
+</script>

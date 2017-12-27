@@ -1,0 +1,59 @@
+<link rel="import" href="../../../bower_components/paper-tabs/paper-tabs.html">
+<dom-module id="page-settings">
+    <template>
+        <style>
+            :host {
+                display: block;
+            }
+        </style>
+        <app-route
+        route="{{route}}"
+        pattern="/:setting"
+        data="{{settingData}}"
+        tail="{{subRoute}}"></app-route>
+        <main class="layout vertical">
+            <paper-header-panel class="flex">
+                <paper-toolbar class="medium-tall">
+                    <span class="title">{{localize('settings')}}</span>
+                    <paper-tabs class="bottom" selected="{{settingData.setting}}"
+                    attr-for-selected="name">
+                    <paper-tab name="general">{{localize('general-settings')}}</paper-tab>
+                    <template is="dom-if" if$="[[canSee('bt')]]">
+                    <paper-tab name="basics">{{localize('basic-types')}}</paper-tab>
+                    </template>
+                    <template is="dom-if" if$="[[canSee('us')]]">
+                    <paper-tab name="users">{{localize('users-management')}}</paper-tab>
+                    </template>
+                </paper-tabs>
+            </paper-toolbar>
+        </paper-header-panel>
+        <neon-animated-pages
+        selected="{{settingData.setting}}"
+        attr-for-selected="name"
+        fallback-selection="general"
+        entry-animation="fade-in-animation"
+        exit-animation="fade-out-animation">
+        <tab-general name="general"></tab-general>
+        <tab-basics  name="basics"></tab-basics>
+        <tab-users name="users"></tab-users>
+    </neon-animated-pages>
+</main>
+</template>
+
+<script>
+    Polymer({
+        is: 'page-settings',
+        behaviors: [
+        MyLocalizeBehavior
+        ],
+        observers: [
+        '_routePageChanged(settingData.setting)'
+        ],
+        _routePageChanged: function (page) {
+            page = page || 'general';
+            const resolvedPageUrl = this.resolveUrl('tab-' + page + '.html');
+            app.importHref(resolvedPageUrl, null, null, true);
+        }
+    });
+</script>
+</dom-module>

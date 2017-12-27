@@ -1,0 +1,151 @@
+<dom-module id="screen-main">
+	<template>
+		<style>
+			:host {
+				display: block;
+			}
+			fop-avatar {
+				margin-top: 15px;
+			}
+			paper-icon-item {
+				--paper-icon-item: {
+					cursor: pointer;
+				}
+			}
+			.toolbar-tools > ::content > .title {
+				margin-left: 10px !important;
+			}
+			paper-header-panel {
+				--paper-header-panel-shadow: {
+					box-shadow: inset 0px 5px 6px -3px rgba(0, 0, 0, 0);
+				};
+			}
+		</style>
+		<iron-localstorage name="user" value="{{localStorage}}"></iron-localstorage>
+		<app-location route="{{route}}"></app-location>
+		<app-route
+		route="{{route}}"
+		pattern="/:page"
+		data="{{pageData}}"
+		tail="{{subRoute}}"></app-route>
+
+		<body class="fullbleed layout vertical">
+			<paper-drawer-panel>
+				<paper-header-panel drawer>
+					<paper-toolbar class="medium-tall">
+						<fop-avatar src$="[[getAbsoluteAddress(localStorage.image)]]"></fop-avatar>
+						<div class="middle">
+							<div>[[localStorage.name]]</div>
+							<div style="font-size:13px;font-weight: 100;">[[localStorage.email]]</div>
+						</div>
+					</paper-toolbar>
+					<paper-menu selected="{{pageData.page}}" attr-for-selected="name" role="navigation" class="drawer-list">
+						<paper-icon-item name="dashboard">
+							<iron-icon icon="icons:dashboard" item-icon></iron-icon>
+							{{localize('dashboard')}}
+						</paper-icon-item>
+						<template is="dom-if" if$="[[canSee('cr')]]">
+							<paper-icon-item name="call-requests">
+								<iron-icon icon="icons:perm-phone-msg" item-icon></iron-icon>
+								{{localize('call-requests')}}
+							</paper-icon-item>
+						</template>
+						<template is="dom-if" if$="[[canSee('cm')]]">
+							<paper-icon-item name="complaints">
+								<iron-icon id="complaintsIcon" icon="icons:info" item-icon></iron-icon>
+								{{localize('complaints')}}
+								<paper-badge id="badgeComplaints" for="complaintsIcon" class="red">
+								</paper-badge>
+							</paper-icon-item>
+						</template>
+						<template is="dom-if" if$="[[canSee('pr')]]">
+							<paper-icon-item name="payment-requests">
+								<iron-icon id="paymentRequestsIcon" icon="icons:euro-symbol" item-icon></iron-icon>
+								[[localize('payment-requests')]]
+								<paper-badge id="badgePaymentRequest" for="paymentRequestsIcon" label="[[baseData.unpaid_count]]" class="red">
+								</paper-badge>
+							</paper-icon-item>
+						</template>
+						<template is="dom-if" if$="[[canSee('dr')]]">
+							<paper-icon-item name="drivers">
+								<iron-icon icon="icons:rowing" item-icon></iron-icon>
+								{{localize('drivers')}}
+							</paper-icon-item>
+						</template>
+						<template is="dom-if" if$="[[canSee('tr')]]">
+							<paper-icon-item name="travels">
+								<iron-icon icon="icons:card-travel" item-icon></iron-icon>
+								{{localize('travels')}}
+							</paper-icon-item>
+						</template>
+						<paper-icon-item name="settings">
+							<iron-icon icon="icons:settings" item-icon></iron-icon>
+							{{localize('settings')}}
+						</paper-icon-item>
+					</paper-menu>
+				</paper-header-panel>
+				<!--TODO:See if i can remove header panel-->
+				<paper-header-panel id="headerPanel" main>
+					<neon-animated-pages
+					selected="{{pageData.page}}"
+					attr-for-selected="name"
+					fallback-selection="dashboard"
+					role="main"
+					entry-animation="scale-up-animation"
+					exit-animation="fade-out-animation">
+					<page-dashboard name="dashboard"></page-dashboard>
+					<page-call-requests name="call-requests"></page-call-requests>
+					<page-complaints name="complaints"></page-complaints>
+					<page-drivers name="drivers"></page-drivers>
+					<page-payment-requests name="payment-requests"></page-payment-requests>
+					<page-travels name="travels"></page-travels>
+					<page-settings name="settings" route="{{subRoute}}"></page-settings>
+					<my-view404 name="view404"></my-view404>
+				</neon-animated-pages>
+				<paper-toast id="toast1" duration="0" text="" horizontal-align="right">
+					<paper-button onclick="mainScreen.$.toast1.toggle()">{{localize('dismiss')}}</paper-button>
+				</paper-toast>
+			</paper-header-panel>
+
+		</paper-drawer-panel>
+
+	</body>
+
+</template>
+<script>
+	let mainScreen;
+	
+	Polymer({
+		is: 'screen-main',
+		behaviors: [
+		MyLocalizeBehavior
+		],
+		properties: {
+			loginResponse: {
+				type: Object,
+				observer: 'tokenReceived'
+			},
+			baseData:{
+				type:Object,
+				notify:true
+			},
+		},
+		attached: function () {
+			mainScreen = this;
+			socket.on('alertsCountChanged',function(waitingComplaints,unpaidPaymentRequests){
+				mainScreen.$$('#badgeComplaints').label = waitingComplaints.toString();
+				mainScreen.$$('#badgePaymentRequest').label = unpaidPaymentRequests.toString();
+			});
+			socket.emit('getAlertsCount');
+		},
+		observers: [
+		'_routePageChanged(pageData.page)'
+		],
+		_routePageChanged: function (page) {
+			page = page || 'dashboard';
+			var resolvedPageUrl = this.resolveUrl('pages/' + page + '/'+ page +'.html');
+			this.importHref(resolvedPageUrl, null, null, true);
+		}		
+	});
+</script>
+</dom-module>

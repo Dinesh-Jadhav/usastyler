@@ -1,0 +1,123 @@
+<link rel="import" href="../../../bower_components/salte-rating/salte-rating.html">
+<dom-module id="page-travels">
+    <template>
+        <style>
+            :host {
+                display: block;
+            }
+
+            #dataTableCard {
+                padding: 10px;
+            }
+        </style>
+        <paper-toolbar>
+            <span class="title">{{localize('travels')}}</span>
+        </paper-toolbar>
+        <paper-dialog id="dlgTravelTypes" style="min-width:400px;" entry-animation="scale-up-animation"
+                      exit-animation="fade-out-animation">
+            <paper-dialog-scrollable>
+                <div class="vertical layout">
+                    <paper-listbox selected-values="{{enabledTravelTypes}}" attr-for-selected="data-route" multi>
+                        <template is="dom-repeat" items="{{travelTypes}}">
+                            <paper-item data-route$="[[item.id]]">[[item.title]]</paper-item>
+                        </template>
+                    </paper-listbox>
+                </div>
+            </paper-dialog-scrollable>
+            <div class="buttons">
+                <paper-button dialog-dismiss>{{localize('dismiss')}}</paper-button>
+                <paper-button dialog-confirm autofocus on-click="onSaveTravelTypes">{{localize('confirm')}}
+                </paper-button>
+            </div>
+        </paper-dialog>
+        <paper-datatable-card id="dataTableCard" header="{{localize('travels')}}" data-source="{{data}}" page-size="10"
+                              id-property="id"
+                              selected-ids="{{selectedIds}}">
+            <div slot="toolbar-main">
+                <paper-input value="{{searchTerm}}" on-input="refreshList" label="{{localize('table-search')}}"
+                             style="display:inline-block" no-label-float>
+                    <div prefix>
+                        <iron-icon icon="search"></iron-icon>
+                    </div>
+                </paper-input>
+                <paper-icon-button icon="cached" on-tap="refreshList"></paper-icon-button>
+            </div>
+            <div slot="toolbar-select">
+            </div>
+            <div slot="toolbar-select-single">
+                <paper-icon-button id="btnShowTravelDetails" icon="icons:description" on-tap="onShowTravelDetails"></paper-icon-button>
+                <paper-tooltip for="btnShowTravelDetails">{{localize('show-travel')}}</paper-tooltip>
+
+            </div>
+            <paper-datatable id="datatable" selectable multi-selection
+                             selected-items="{{selectedItems}}" on-row-tap="rowTapped">
+                <div no-results>
+                    {{localize('table-loading')}}
+                </div>
+                <paper-datatable-column header="{{localize('column-id')}}" property="id" sortable
+                                        style="width: 5%" align="center" sorted>
+                </paper-datatable-column>
+                <paper-datatable-column header="{{localize('column-origin')}}" property="origin"
+                                        style="width: 15%">
+                </paper-datatable-column>
+                <paper-datatable-column header="{{localize('column-destination')}}" property="destination"
+                                        style="width: 15%">
+                </paper-datatable-column>
+                <paper-datatable-column header="{{localize('column-distance')}}" property="distance"
+                                        style="width: 10%">
+                </paper-datatable-column>
+                <paper-datatable-column header="{{localize('column-duration')}}" property="duration"
+                                        style="width: 10%">
+                </paper-datatable-column>
+                <paper-datatable-column header="{{localize('column-rating')}}" property="rating"
+                                        style="width: 15%">
+                    <template>
+                        <salte-rating value="[[value]]" icon="star" disabled></salte-rating>
+                    </template>
+                </paper-datatable-column>
+                <paper-datatable-column header="{{localize('column-request-time')}}" property="request_time" sortable
+                                        style="width: 15%">
+                </paper-datatable-column>
+                <paper-datatable-column header="{{localize('column-cost')}}" property="cost"
+                                        style="width: 15%">
+                </paper-datatable-column>
+            </paper-datatable>
+        </paper-datatable-card>
+    </template>
+    <script>
+        let travelsPage;
+        Polymer({
+            is: 'page-travels',
+            behaviors: [
+                MyLocalizeBehavior
+            ],
+            attached: function () {
+                travelsPage = this;
+            },
+            properties: {
+                data: {
+                    type: Object,
+                    value: {
+                        get: function (sort, page, pageSize) {
+                            let result = getAllTravels(travelsPage.searchTerm, sort, (page - 1) * pageSize, pageSize);
+                            result.then(function (items) {
+                                travelsPage.set('data.length', items.length ? items[0].count : 0);
+                            });
+                            return result;
+                        },
+                        set: function (item, property, value) {
+                            return null;
+                        },
+                        length: 0
+                    }
+                },
+            },
+            onShowTravelDetails: function () {
+
+            },
+            refreshList: function (ev) {
+                this.$.dataTableCard.retrieveVisibleData();
+            }
+        });
+    </script>
+</dom-module>

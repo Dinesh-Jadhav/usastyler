@@ -1,0 +1,101 @@
+<dom-module id="page-payment-requests">
+	<template>
+		<style>
+			:host {
+				display: block;
+				padding: 10px;
+			}
+		</style>
+		<paper-datatable-card id="dataTableCard" header="{{localize('payment-requests')}}" data-source="{{data}}"
+		page-size="10"
+		id-property="id"
+		selected-ids="{{selectedIds}}">
+		<div slot="toolbar-main">
+			<paper-input id="searchInput" value="{{searchTerm}}" on-input="refreshTable"
+			label="{{localize('table-search')}}"
+			style="display:inline-block" no-label-float>
+			<div prefix>
+				<iron-icon icon="search"></iron-icon>
+			</div>
+		</paper-input>
+		<paper-icon-button icon="cached" on-tap="refreshTable"></paper-icon-button>
+		<paper-toggle-button id="tglIsPaid" on-click="refreshTable" style="display:inline-flex">
+			{{localize('show-paid')}}
+		</paper-toggle-button>
+	</div>
+	<div slot="toolbar-select">
+		<paper-icon-button id="markAllPaid" icon="icons:done-all"
+		on-tap="onMarkAllPaid"></paper-icon-button>
+		<paper-tooltip for="markAllPaid">{{localize('mark-paid')}}</paper-tooltip>
+	</div>
+	<div slot="toolbar-select-single">
+		<paper-icon-button id="showTravel" icon="icons:description" on-tap="showTravelInfo"></paper-icon-button>
+		<paper-tooltip for="showTravel">{{localize('show-travel')}}</paper-tooltip>
+	</div>
+	<paper-datatable id="datatable" selectable multi-selection
+	selected-items="{{selectedItems}}">
+	<div no-results>
+		{{localize('table-loading')}}
+	</div>
+	<paper-datatable-column header="{{localize('column-id')}}" property="id"
+	sortable
+	style="width: 5%" align="center" sorted></paper-datatable-column>
+	<paper-datatable-column header="{{localize('column-driver-name')}}" property="driver_name" style="width: 15%"></paper-datatable-column>
+	<paper-datatable-column header="{{localize('column-driver-number')}}" property="driver_number" style="width: 15%"></paper-datatable-column>
+	<paper-datatable-column header="{{localize('column-request-date')}}" property="request_date" sortable style="width: 15%"></paper-datatable-column>
+	<paper-datatable-column id="colPaidDate" header="{{localize('column-paid-date')}}" property="paid_date" sortable style="width: 13%"></paper-datatable-column>
+	<paper-datatable-column header="{{localize('column-amount')}}" property="amount" sortable style="width: 7%"></paper-datatable-column>
+	<paper-datatable-column header="{{localize('column-account-number')}}" property="account_number" style="width: 15%"></paper-datatable-column>
+	<paper-datatable-column header="{{localize('column-comment')}}" property="comment" editable style="width: 25%"></paper-datatable-column>
+	<!--TODO:Make sure Comment field works because of set problems and whatsoever-->
+</paper-datatable>
+</paper-datatable-card>
+</template>
+<script>
+	let paymentRequestsPage;
+	Polymer({
+		is: 'page-payment-requests',
+		behaviors: [
+		MyLocalizeBehavior
+		],
+		properties: {
+			data: {
+				type: Object,
+				value: {
+					get: function (sort, page, pageSize) {
+						let preqs = getAllPaymentRequests(paymentRequestsPage.searchTerm, sort, (page - 1) * pageSize, pageSize, paymentRequestsPage.$.tglIsPaid.checked);
+						preqs.then(function (items) {
+							paymentRequestsPage.set('data.length', items.length ? items[0].count : 0);
+						});
+						return preqs;
+					},
+					set: function (item, property, value) {
+						return setColumnValue('payment_request', item.id, property, value);;
+					},
+					length: 0
+				},
+			}
+		},
+		attached: function () {
+			paymentRequestsPage = this;
+		},
+		onMarkAllPaid: function () {
+			socket.emit('markPaymentRequestsPaid', this.selectedIds, function (result) {
+				if (result === 200) {
+					paymentRequestsPage.$.dataTableCard.retrieveVisibleData();
+					paymentRequestsPage.$.dataTableCard.deselectAll();
+				}
+				else
+					alert('Not Saved');
+			});
+		},
+		showTravelInfo: function () {
+			app.set('route.path', '/driver/' + this.selectedItems[0].fk_driver);
+		},
+		refreshTable: function (ev) {
+                //paymentRequestsPage.$.colPaidDate.inactive = !paymentRequestsPage.$.tglIsPaid.checked;
+                this.$.dataTableCard.retrieveVisibleData();
+            }
+        })
+    </script>
+</dom-module>

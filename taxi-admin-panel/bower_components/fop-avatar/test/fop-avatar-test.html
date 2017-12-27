@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+<head>
+  <title>fop-avatar test</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+  <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+  <script src="../../web-component-tester/browser.js"></script>
+
+  <link rel="import" href="../fop-avatar.html">
+</head>
+<body>
+
+  <test-fixture id="fop-avatar">
+    <template>
+      <fop-avatar></fop-avatar>
+    </template>
+  </test-fixture>
+
+  <script>
+  suite('fop-avatar', function() {
+
+    var element;
+    setup(function(){
+      element = fixture('fop-avatar');
+    });
+
+    test('instantiating the element works', function() {
+      assert.equal(element.is, 'fop-avatar');
+    });
+
+    test('selected toggle works',function(){
+      assert.equal(element.selected,false);
+      element.selected = true;
+      assert.equal(element.selected,true);
+    });
+
+    test('selected icon can be changed',function(){
+      expect(element.selectedIcon).to.be.a('string');
+      element.selectedIcon = 'home';
+      expect(element.selectedIcon).to.be.equal('home');
+    });
+
+    test('#_getFirstLetter() return the first letter of the given string',function(){
+      expect(element._getFirstLetter('hyyan')).to.be.equal('h');
+      expect(element._getFirstLetter('kome')).to.be.equal('k');
+    });
+
+    suite('#_isValidSrc()',function(){
+
+      test('can handle strings',function(){
+        element.src = '/image.jpg';
+        expect(element._isValidSrc()).to.be.equal(true);
+        element.src = '';
+        expect(element._isValidSrc()).to.be.equal(false);
+      });
+
+      test('can handle undefined',function(){
+        expect(element._isValidSrc()).to.be.equal(false);
+      });
+
+    });
+
+    suite('String fallback',function(){
+
+      test('works when src is not set',function(done){
+        element.string = 'Hyyan';
+        flush(function(){
+          var letter = element.$$('.letter');
+          expect(letter.hidden).to.be.equal(false);
+          done();
+        });
+      });
+
+      test('is ignored when src is set',function(done){
+        element.string = 'Hyyan';
+        element.src = '/demo/avatar.png';
+
+        flush(function(){
+          var letter = element.$$('.letter');
+          expect(letter.hidden).to.be.equal(true);
+          done();
+        });
+      });
+
+    });
+
+  });
+  </script>
+</body>
+</html>

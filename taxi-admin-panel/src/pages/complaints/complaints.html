@@ -1,0 +1,117 @@
+<dom-module id="page-complaints">
+    <template>
+        <style>
+            :host {
+                display: block;
+                padding: 10px;
+            }
+        </style>
+        <paper-datatable-card id="dataTableCard" header="{{localize('complaints')}}" data-source="{{data}}"
+                              page-size="10"
+                              id-property="id"
+                              selected-ids="{{selectedIds}}">
+            <div slot="toolbar-main">
+                <paper-input id="searchInput" value="{{searchTerm}}" on-input="refreshTable"
+                             label="{{localize('table-search')}}"
+                             style="display:inline-block" no-label-float>
+                    <div prefix>
+                        <iron-icon icon="search"></iron-icon>
+                    </div>
+                </paper-input>
+                <paper-icon-button icon="cached" on-tap="refreshTable"></paper-icon-button>
+                <paper-toggle-button id="tglIsReviewed" on-click="refreshTable" style="display:inline-flex">
+                    {{localize('show-reviewed')}}
+                </paper-toggle-button>
+            </div>
+            <div slot="toolbar-select">
+                <paper-icon-button id="markAllReviewed" icon="icons:done-all"
+                                   on-tap="markAllReviewed"></paper-icon-button>
+                <paper-tooltip for="markAllReviewed">{{localize('mark-reviewed')}}</paper-tooltip>
+            </div>
+            <div slot="toolbar-select-single">
+                <paper-icon-button id="showTravel" icon="icons:description" on-tap="showTravelInfo"></paper-icon-button>
+                <paper-tooltip for="showTravel">{{localize('show-travel')}}</paper-tooltip>
+            </div>
+            <paper-datatable id="datatable" selectable multi-selection
+                             selected-items="{{selectedItems}}">
+                <div no-results>
+                    {{localize('table-loading')}}
+                </div>
+                <paper-datatable-column header="{{localize('column-id')}}" property="id" type="String" sortable
+                                        style="width: 5%" align="center" sorted>
+                </paper-datatable-column>
+                <paper-datatable-column header="{{localize('column-datetime')}}" property="time_inscription"
+                                        type="String"
+                                        sortable
+                                        style="width: 15%">
+                </paper-datatable-column>
+                <paper-datatable-column header="{{localize('column-from')}}" property="from" type="String"
+                                        sortable
+                                        style="width: 10%">
+                </paper-datatable-column>
+                <paper-datatable-column header="{{localize('column-type')}}" property="complaint" type="String"
+                                        style="width: 20%">
+                </paper-datatable-column>
+                <paper-datatable-column header="{{localize('column-subject')}}" property="subject" type="String"
+                                        style="width: 20%">
+                </paper-datatable-column>
+                <paper-datatable-column header="{{localize('column-content')}}" property="content" type="String"
+                                        style="width: 40%">
+                </paper-datatable-column>
+            </paper-datatable>
+        </paper-datatable-card>
+    </template>
+    <script>
+        let complaintPage;
+        Polymer({
+            is: 'page-complaints',
+            behaviors: [
+                MyLocalizeBehavior
+            ],
+            properties: {
+                data: {
+                    type: Object,
+                    value: {
+                        get: function (sort, page, pageSize) {
+                            let complaints = getAllComplaints(complaintPage.searchTerm, sort, (page - 1) * pageSize, pageSize, complaintPage.$.tglIsReviewed.checked);
+                            complaints.then(function (items) {
+                                complaintPage.set('data.length', items.length ? items[0].count : 0);
+
+                                items.map(function (item) {
+                                    if (item.fromRider !== 0)
+                                        item.from = complaintPage.localize('driver');
+                                    else
+                                        item.from = complaintPage.localize('rider');
+                                });
+                            });
+                            return complaints;
+                        },
+                        set: function (item, property, value) {
+                            return null;
+                        },
+                        length: 0
+                    },
+                }
+            },
+            attached: function () {
+                complaintPage = this;
+            },
+            markAllReviewed: function () {
+                socket.emit('markComplaintsReviewed', this.selectedIds, function (result) {
+                    if (result === 200) {
+                        complaintPage.$.dataTableCard.retrieveVisibleData();
+                        complaintPage.$.dataTableCard.deselectAll();
+                    }
+                    else
+                        alert('Not Saved');
+                });
+            },
+            showTravelInfo: function () {
+                app.set('route.path', '/travels/' + this.selectedItems[0].travelID);
+            },
+            refreshTable: function (ev) {
+                this.$.dataTableCard.retrieveVisibleData();
+            }
+        })
+    </script>
+</dom-module>

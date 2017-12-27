@@ -1,0 +1,412 @@
+<link rel="import" href="widgets/events.html">
+<link rel="import" href="widgets/onlines.html">
+<link rel="import" href="widgets/stats.html">
+<link rel="import" href="widgets/today.html">
+<link rel="import" href="widgets/todo.html">
+<link rel="import" href="../../../bower_components/app-layout/app-layout.html">
+<dom-module id="page-dashboard">
+	<template>
+		<style include="app-grid-style">
+			:host {
+				--app-grid-columns: 3;
+				--app-grid-item-height: 50%;
+				--app-grid-gutter: 10px;
+				--app-grid-expandible-item-columns: 3;
+			}
+			.card {
+				display: flex;
+			}
+
+			.card-1, .card-2, .card-3 {
+				//padding: 20px;
+			}
+
+			.card .chart {
+				flex-grow: 1;
+				margin-top: 70px;
+				margin-bottom: 20px;
+			}
+			.card-header{
+				position: absolute;
+				margin: 0;
+				color: white;
+				margin-top: 20px;
+				margin-left: 20px;
+			}
+			.card-subheader{
+				position: absolute;
+				margin: 45px 0 0 20px;
+				font-weight: 200;
+				color: white;
+			}
+			.options-icon{
+				position: absolute;
+				right: 0;
+				margin: 20px 20px 0 0;
+				color: white;
+			}
+			.card-1 {
+				--paper-card-background-color: #00bcd4;
+			}
+
+			.card-2 {
+				--paper-card-background-color: #f06292;
+			}
+
+			.card-3 {
+				--paper-card-background-color: #ffc107;
+			}
+
+			.container {
+				justify-content: center;
+				align-content: flex-start;
+			}
+			.card-stats,.card-onlines{
+				@apply(--app-grid-expandible-item);
+			}
+			.card-onlines{
+				background-color: transparent;
+			}
+			widget-onlines{
+				margin-left: -10px;
+				width: 120% !important;
+				margin-right: -10px;
+			}
+		}
+
+	</style>
+	<div class="app-grid">
+		<paper-card class="card card-onlines" elevation="0" style="height: 100px;">
+			<widget-onlines></widget-onlines>
+		</paper-card>
+		<paper-card class="card card-stats">
+			<widget-stats></widget-stats>
+		</paper-card>
+		<paper-card class="card card-1">
+			<paper-icon-button class="options-icon" icon="icons:more-vert" on-click="cardFirstClicked"></paper-icon-button>
+			<h3 class="card-header">{{localize('chart-income')}}</h3>
+			<p id="chartIncomeSubHeader" class="card-subheader"></p>
+			<chart-bar id="chart1" class="chart" data="[[dataIncome]]"
+			options="[[optionIncome]]"></chart-bar>
+			<vaadin-context-menu id="CardFirstMenu">
+				<template>
+					<paper-menu on-selected-changed="menuFirstSelected">
+						<paper-item>{{localize('daily')}}</paper-item>
+						<paper-item>{{localize('weekly')}}</paper-item>
+						<paper-item>{{localize('monthly')}}</paper-item>
+					</paper-menu>
+				</template>
+			</vaadin-context-menu>
+		</paper-card>
+		<paper-card class="card card-2">
+			<paper-icon-button class="options-icon" icon="icons:more-vert" on-click="cardSecondClicked"></paper-icon-button>
+			<h3 class="card-header">{{localize('chart-services')}}</h3>
+			<p id="chartServicesSubHeader" class="card-subheader"></p>
+			<chart-line class="chart" data="[[dataServices]]" options="[[optionServices]]"></chart-line>
+			<vaadin-context-menu id="CardSecondMenu">
+				<template>
+					<paper-menu on-selected-changed="menuSecondSelected">
+						<paper-item>{{localize('daily')}}</paper-item>
+						<paper-item>{{localize('weekly')}}</paper-item>
+						<paper-item>{{localize('monthly')}}</paper-item>
+					</paper-menu>
+				</template>
+			</vaadin-context-menu>
+		</paper-card>
+		<paper-card class="card card-3">
+			<paper-icon-button class="options-icon" icon="icons:more-vert" on-click="cardThirdClicked"></paper-icon-button>
+			<h3 class="card-header">{{localize('chart-new-users')}}</h3>
+			<p id="chartNewUsersSubHeader" class="card-subheader"></p>
+			<chart-line class="chart" data="[[dataUsers]]" options="[[optionUsers]]"></chart-line>
+			<vaadin-context-menu id="CardThirdMenu">
+				<template>
+					<paper-menu on-selected-changed="menuThirdSelected">
+						<paper-item>{{localize('daily')}}</paper-item>
+						<paper-item>{{localize('weekly')}}</paper-item>
+						<paper-item>{{localize('monthly')}}</paper-item>
+					</paper-menu>
+				</template>
+			</vaadin-context-menu>
+		</paper-card>
+		<paper-card class="card">
+			<widget-todo></widget-todo>
+		</paper-card>
+		<paper-card class="card">
+			<widget-events></widget-events>
+		</paper-card>
+		<paper-card class="card">
+			<widget-today></widget-today>
+		</paper-card>
+	</div>
+</template>
+<script>
+	let dashboardPage;
+	Polymer({
+		is: 'page-dashboard',
+		attached: function () {
+			dashboardPage = this;
+			this.async(function () {
+				var nodeList = Polymer.dom(this.root).querySelectorAll('.card');
+				this.animationConfig['entry'][0].nodes = Array.prototype.slice.call(nodeList);
+				this.playAnimation('entry');
+			});
+			this.getIncomes(0,40);
+			this.getServices(0,12);
+			this.getNewUsers(0,12);
+		},
+		behaviors: [
+		Polymer.NeonAnimationRunnerBehavior,
+		MyLocalizeBehavior
+		],
+		getChartSubHeader:function(groupBy,muchAgo){
+			switch(groupBy){
+				case 0:
+				return dashboardPage.localize('chart-sub-day','amount',muchAgo);
+				break;
+				case 1:
+				return dashboardPage.localize('chart-sub-week','amount',muchAgo);
+				break;
+				case 2:
+				return dashboardPage.localize('chart-sub-month','amount',muchAgo);
+				break;
+			}
+		},
+
+		getIncomes:function (groupBy,muchAgo) {
+			socket.emit('getIncomes',groupBy,muchAgo,function(result){
+				dashboardPage.set('dataIncome.labels',result.map(x=>x.date));
+				dashboardPage.set('dataIncome.datasets.0.data',result.map(x=>x.amount));
+				//dashboardPage.$.chart1.update();
+				dashboardPage.$.chartIncomeSubHeader.innerText = dashboardPage.getChartSubHeader(groupBy,muchAgo);
+			});
+		},
+		getServices:function (groupBy,muchAgo) {
+			socket.emit('getServicesCount',groupBy,muchAgo,function(result){
+				dashboardPage.set('dataServices.labels',result.map(x=>x.date));
+				dashboardPage.set('dataServices.datasets.0.data',result.map(x=>x.amount));
+				dashboardPage.$.chartServicesSubHeader.innerText = dashboardPage.getChartSubHeader(groupBy,muchAgo);
+			});
+		},
+		getNewUsers:function (groupBy,muchAgo) {
+			socket.emit('getNewUsers',groupBy,muchAgo,function(result){
+				dashboardPage.set('dataUsers.labels',result.map(x=>x.date));
+				dashboardPage.set('dataUsers.datasets.0.data',result.map(x=>x.amount));
+				dashboardPage.$.chartNewUsersSubHeader.innerText = dashboardPage.getChartSubHeader(groupBy,muchAgo);
+			});
+		},
+		cardFirstClicked:function (event) {
+			if (!this.$.CardFirstMenu.opened)
+				this.$.CardFirstMenu.open(event);
+			else
+				this.$.CardFirstMenu.close();
+		},
+		cardSecondClicked:function (event) {
+			if (!this.$.CardSecondMenu.opened)
+				this.$.CardSecondMenu.open(event);
+			else
+				this.$.CardSecondMenu.close();
+		},
+		cardThirdClicked:function (event) {
+			if (!this.$.CardThirdMenu.opened)
+				this.$.CardThirdMenu.open(event);
+			else
+				this.$.CardThirdMenu.close();
+		},
+		getMuchAgo:function (groupBy) {
+			let muchAgo;
+			switch(event.detail.value){
+				case(0):
+				muchAgo = 40;
+				break;
+				case(1):
+				muchAgo = 16;
+				break;
+				case(2):
+				muchAgo = 12;
+				break;
+			}
+			return muchAgo;
+		},
+		menuFirstSelected:function (event) {
+			let muchAgo = this.getMuchAgo(event.detail.value);
+			this.getIncomes(event.detail.value,muchAgo);
+		},
+		menuSecondSelected:function (event) {
+			let muchAgo = this.getMuchAgo(event.detail.value);
+			this.getServices(event.detail.value,muchAgo);
+		},
+		menuThirdSelected:function (event) {
+			let muchAgo = this.getMuchAgo(event.detail.value);
+			this.getNewUsers(event.detail.value,muchAgo);
+		},
+		properties: {
+			stats:{
+				type:Object
+			},
+			optionIncome: {
+				type: Object,
+				value: function () {
+					return {
+						layout: {
+							padding: {
+								left: 15,
+								right: 15
+							}
+						},
+						scales: {
+							xAxes: [{
+								display: false
+							}],
+							yAxes: [{
+								display: false
+							}]
+						},
+						legend: {
+							display: false
+						}
+					}
+				}
+			},
+			optionServices: {
+				type: Object,
+				value: function () {
+					return {
+						layout: {
+							padding: {
+								left: 15,
+								right: 15
+							}
+						},
+						scales: {
+							xAxes: [{
+								display: false
+							}],
+							yAxes: [{
+								display: false
+							}]
+						},
+						legend: {
+							display: false
+						},
+					}
+				}
+			},
+			optionUsers: {
+				type: Object,
+				value: function () {
+					return {
+						layout: {
+							padding: {
+								left: 15,
+								right: 15
+							}
+						},
+						scales: {
+							xAxes: [{
+								display: false
+							}],
+							yAxes: [{
+								display: false
+							}]
+						},
+						legend: {
+							display: false
+						}
+					}
+				}
+			},
+			dataIncome: {
+				type: Object,
+				value: function () {
+					return {
+						labels: ["January", "February", "March", "April", "May", "June", "July", "Aug", "Sep", "Oct", "Nov", "Dec","January", "February", "March", "April", "May", "June", "July", "Aug", "Sep", "Oct", "Nov", "Dec","January", "February", "March", "April", "May", "June", "July", "Aug", "Sep", "Oct", "Nov", "Dec", "Sep", "Oct", "Nov", "Dec"],
+						datasets: [
+						{
+							label: "Income",
+							backgroundColor: "white",
+							borderWidth:6,
+							borderColor:"transparent",
+
+							data: [65, 59, 80, 81, 56, 55, 40, 30, 32, 13, 54, 45,65, 59, 80, 81, 56, 55, 40, 30, 32, 13, 54, 45,65, 59, 80, 81, 56, 55, 40, 30, 32, 13, 54, 45, 32, 13, 54, 45]
+						}]
+					}
+				}
+			},
+			dataServices: {
+				type: Object,
+				value: function () {
+					return {
+						labels: ["January", "February", "March", "April", "May", "June", "July", "Aug", "Sep", "Oct", "Nov", "Dec"],
+						datasets: [
+						{
+							label: "Services",
+							borderColor: "white",
+							backgroundColor: "transparent",
+							borderWidth: 2,
+							pointBorderColor: "#f06292",
+							pointBackgroundColor: "white",
+							pointBorderWidth: 3,
+							pointHoverBorderWidth: 2,
+							pointHoverBackgroundColor: "white",
+							pointHoverBorderColor: "#f06292",
+							pointHoverRadius:5,
+							pointRadius: 4,
+							data: [65, 59, 80, 81, 56, 55, 40, 30, 32, 13, 54, 45]
+						}]
+					}
+				}
+			},
+			dataUsers: {
+				type: Object,
+				value: function () {
+					return {
+						labels: ["January", "February", "March", "April", "May", "June", "July", "Aug", "Sep", "Oct", "Nov", "Dec"],
+						datasets: [
+						{
+							label: "New Users",
+							borderColor: "white",
+							backgroundColor: "transparent",
+							borderWidth: 2,
+							pointBorderColor: "#ffc107",
+							pointBackgroundColor: "white",
+							pointBorderWidth: 3,
+							pointHoverBorderWidth: 2,
+							pointHoverBackgroundColor: "white",
+							pointHoverBorderColor: "#ffc107",
+							pointHoverRadius:5,
+							pointRadius: 4,
+							data: [65, 59, 80, 81, 56, 55, 40, 30, 32, 13, 54, 45]
+						}]
+					}
+				}
+			},
+			animationConfig: {
+				type: Object,
+				value: function () {
+					return {
+						/*'entry': [{
+						name: 'cascaded-animation',
+						animation: 'transform-animation',
+						transformFrom: 'translateY(100%)',
+						transformTo: 'none',
+						timing: {
+						delay: 50
+						}
+					}]*/
+					'entry': [{
+						name: 'cascaded-animation',
+						animation: 'fade-in-animation',
+						transformFrom: '0',
+						transformTo: '1',
+						nodeDelay: 100,
+						timing: {
+							delay: 50
+						}
+					}]
+				}
+			}
+		}
+	}
+});
+</script>
+</dom-module>

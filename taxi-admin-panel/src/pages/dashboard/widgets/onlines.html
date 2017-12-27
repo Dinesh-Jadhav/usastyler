@@ -1,0 +1,82 @@
+<dom-module id="widget-onlines">
+	<template>
+		<style>
+			:host {
+				display: block;
+				width: 100%;
+			}
+			.chart{
+				width: 100%;
+				height: 200px;
+			}
+		</style>
+		<div>
+			<chart-line id="chart" class="chart" data="[[dataOnlines]]" options="[[optionOnlines]]">
+			</chart-line>
+		</div>
+	</template>
+	<script>
+	let widgetOnlines;
+		Polymer({
+			is: 'widget-onlines',
+			properties:{
+				optionOnlines: {
+					type: Object,
+					value: function () {
+						return {
+							maintainAspectRatio: false,
+							layout: {
+								padding: {
+									top: 30,
+									bottom: 100,
+									left:10,
+									right:10
+								}
+							},
+
+							scales: {
+								xAxes: [{
+									display: false
+								}],
+								yAxes: [{
+									display: false
+								}]
+							},
+							legend: {
+								display: false
+							}
+						}
+					}
+				},
+				dataOnlines: {
+					type: Object,
+					value: function () {
+						return {
+							labels: ["Now"],
+							datasets: [
+							{
+								label: "Drivers Online",
+								borderColor: "#E91E63",
+								backgroundColor: "#F48FB1",
+								borderWidth: 2,
+								data: [0]
+							}]
+						}
+					}
+				},
+			},
+			attached:function(){
+				widgetOnlines = this;
+				socket.on('ChangeDriversOnline',function(amount){
+					if(widgetOnlines.dataOnlines.labels.length > 10){
+						widgetOnlines.dataOnlines.datasets[0].data.shift();
+						widgetOnlines.dataOnlines.labels.shift();
+					}
+					widgetOnlines.push('dataOnlines.labels',moment().format('H:m'));
+					widgetOnlines.push('dataOnlines.datasets.0.data',amount);
+					widgetOnlines.$.chart.updateChart();
+				});
+			}
+		});
+	</script>
+</dom-module>

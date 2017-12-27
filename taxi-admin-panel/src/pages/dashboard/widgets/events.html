@@ -1,0 +1,77 @@
+<dom-module id="widget-events">
+    <template>
+        <style>
+            :host {
+                display: block;
+                width: 100%;
+                padding-bottom: 10px;
+                background-color: #fafafa;
+            }
+
+            paper-button.button-save {
+                background: var(--accent-color);
+                color: white;
+                flex-grow: 1;
+                align-self: flex-end;
+            }
+
+            .input-reminder {
+                flex-grow: 4;
+            }
+
+            .bottom-bar {
+                display: flex;
+                padding: 10px;
+            }
+            #lstReminders{
+                background: #fafafa;
+            }
+        </style>
+        <app-datepicker id="datePicker" auto-update-date on-date-changed="onSelectedDate"></app-datepicker>
+        <paper-listbox id="lstReminders" attr-for-selected="item-id">
+            <template is="dom-repeat" items="{{reminders}}">
+                <paper-item item-id$="[[item.id]]">
+                    <paper-icon-button on-click="onDeleteReminder"
+                                       icon="icons:delete"></paper-icon-button>
+                    <span>[[item.title]]</span>
+                </paper-item>
+            </template>
+        </paper-listbox>
+        <div class="bottom-bar">
+            <paper-input id="inputReminder" class="input-reminder" label="Enter event title"></paper-input>
+            <paper-button class="button-save" raised on-click="onAddReminder">Add</paper-button>
+        </div>
+    </template>
+    <script>
+        let elementReminders;
+        function getReminders() {
+            if(!elementReminders)
+                return;
+            socket.emit('getReminders', elementReminders.$.datePicker.date, function (result) {
+                elementReminders.reminders = result;
+            });
+        }
+        Polymer({
+            is: 'widget-events',
+            attached: function () {
+                elementReminders = this;
+                getReminders();
+            },
+            onSelectedDate: function (ev) {
+                getReminders();
+            },
+            onAddReminder: function () {
+                socket.emit('addReminder', this.$.datePicker.date, this.$.inputReminder.value, function () {
+                    elementReminders.$.inputReminder.value = null;
+                    getReminders();
+                });
+            },
+            onDeleteReminder: function () {
+                socket.emit('deleteReminder', elementReminders.$.lstReminders.selected, function () {
+                    elementReminders.$.lstReminders.selected = null;
+                    getReminders();
+                });
+            }
+        });
+    </script>
+</dom-module>

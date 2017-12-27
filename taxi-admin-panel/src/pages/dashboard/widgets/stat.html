@@ -1,0 +1,41 @@
+<dom-module id="widget-stat">
+	<template>
+		<style include="iron-flex iron-flex-alignment">
+			:host {
+				position: relative;
+			}
+			/**/
+			.icon{
+				border-radius: 50%;
+				height: 35px;
+				width: 35px;
+				padding: 20px;
+				margin: 10px;
+				background-color: var(--my-icon-color);
+				color: white;
+			}
+			h3,p{
+				margin: 0;
+			}
+			.details{
+
+			}
+			.base{
+				align-items: center;
+			}
+
+		</style>
+		<div class="layout horizontal base">
+			<iron-icon class="icon" icon="{{icon}}"></iron-icon>
+			<div class="details">
+				<h3>{{number}}</h3>
+				<p>{{title}}</p>
+			</div>
+		</div>
+	</template>
+	<script>
+		Polymer({
+			is: 'widget-stat'
+		});
+	</script>
+</dom-module>
